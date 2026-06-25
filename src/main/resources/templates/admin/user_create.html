@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create New User</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #d8dbe0;
+      color: #101214;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      font-size: 14px;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: #202327;
+      border-right: 1px solid #111315;
+      color: #d7dbe0;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .brand {
+      align-items: center;
+      border-bottom: 1px solid #34383e;
+      display: flex;
+      gap: 10px;
+      height: 64px;
+      padding: 0 18px;
+    }
+
+    .brand-mark {
+      align-items: center;
+      background: #111315;
+      border: 1px solid #454a51;
+      border-radius: 4px;
+      display: inline-flex;
+      height: 32px;
+      justify-content: center;
+      width: 32px;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0;
+      line-height: 1.1;
+    }
+
+    .brand-subtitle {
+      color: #9aa2ad;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .nav {
+      padding: 12px 8px;
+    }
+
+    .nav-item {
+      align-items: center;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      color: #c8cdd4;
+      display: flex;
+      gap: 10px;
+      min-height: 38px;
+      padding: 8px 10px;
+      text-decoration: none;
+    }
+
+    .nav-item:hover {
+      background: #2c3036;
+      border-color: #3b4047;
+    }
+
+    .nav-item.active {
+      background: #3b3f46;
+      border-color: #565c65;
+      color: #ffffff;
+    }
+
+    .nav-icon {
+      align-items: center;
+      color: #b6bdc7;
+      display: inline-flex;
+      font-size: 15px;
+      justify-content: center;
+      width: 20px;
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid #34383e;
+      margin-top: auto;
+      padding: 14px 16px;
+    }
+
+    .session-user {
+      color: #bfc5ce;
+      font-size: 12px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .logout-link {
+      align-items: center;
+      background: #151719;
+      border: 1px solid #3e434a;
+      border-radius: 4px;
+      color: #e5e7eb;
+      display: flex;
+      justify-content: center;
+      min-height: 34px;
+      text-decoration: none;
+    }
+
+    .main {
+      min-width: 0;
+      padding: 22px;
+    }
+
+    .topbar {
+      background: #ffffff;
+      border: 1px solid #c8ccd1;
+      border-radius: 6px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      min-height: 76px;
+      padding: 16px 18px;
+    }
+
+    .page-title {
+      align-items: center;
+      display: flex;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .page-icon {
+      align-items: center;
+      background: #eef2ff;
+      border-radius: 6px;
+      color: #2c65c8;
+      display: inline-flex;
+      height: 42px;
+      justify-content: center;
+      width: 42px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    h1 {
+      color: #171a1f;
+      font-size: 20px;
+      line-height: 1.15;
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      color: #666d76;
+      font-size: 13px;
+      margin-top: 3px;
+    }
+
+    .button {
+      align-items: center;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      gap: 7px;
+      justify-content: center;
+      min-height: 34px;
+      padding: 7px 14px;
+      text-decoration: none;
+      white-space: nowrap;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .button.primary {
+      background: #2c65c8;
+      border-color: #1f55b0;
+      color: #ffffff;
+    }
+
+    .button.primary:hover {
+      background: #2251a3;
+    }
+
+    .button.secondary {
+      background: #ffffff;
+      border-color: #babfc7;
+      color: #3d444d;
+    }
+
+    .button.secondary:hover {
+      background: #f3f4f6;
+    }
+
+    .button.grey {
+      background: #6c757d;
+      border-color: #5a6268;
+      color: #ffffff;
+    }
+
+    .button.grey:hover {
+      background: #5a6268;
+    }
+
+    .panel {
+      background: #ffffff;
+      border: 1px solid #c8ccd1;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      align-items: center;
+      background: #2d3239;
+      border-bottom: 1px solid #171a1f;
+      color: #ffffff;
+      display: flex;
+      gap: 10px;
+      min-height: 42px;
+      padding: 10px 16px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .panel-body {
+      padding: 20px;
+    }
+
+    .panel-divider-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #171a1f;
+      padding: 12px 16px 6px 16px;
+      border-top: 1px solid #e5e7eb;
+      margin-top: 10px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 16px 24px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-weight: 600;
+      color: #3d444d;
+      font-size: 13px;
+    }
+
+    .field label span.required {
+      color: #dc3545;
+    }
+
+    .field input,
+    .field select {
+      background: #ffffff;
+      border: 1px solid #babfc7;
+      border-radius: 4px;
+      color: #101214;
+      height: 36px;
+      padding: 6px 12px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: #2c65c8;
+      box-shadow: 0 0 0 2px rgba(44, 101, 200, 0.15);
+    }
+
+    .field input.input-error {
+      border-color: #dc3545;
+      box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.15);
+    }
+
+    .field-error {
+      color: #dc3545;
+      font-size: 12px;
+      margin-top: 2px;
+      display: none;
+      font-weight: 600;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 0 4px;
+    }
+
+    @media (max-width: 920px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        min-height: auto;
+      }
+
+      .nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .sidebar-footer {
+        display: none;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">DB</span>
+        <div>
+          <div class="brand-title">Oracle DBA</div>
+          <div class="brand-subtitle">Administration Console</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-item" href="/admin/dashboard">
+          <span class="nav-icon">□</span>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-item active" href="/admin/users">
+          <span class="nav-icon">▦</span>
+          <span>User Management</span>
+        </a>
+        <a class="nav-item" href="/admin/roles">
+          <span class="nav-icon">◇</span>
+          <span>Role Management</span>
+        </a>
+        <a class="nav-item" href="/admin/profiles">
+          <span class="nav-icon">▤</span>
+          <span>Profile Management</span>
+        </a>
+        <a class="nav-item" href="/admin/audit-logs">
+          <span class="nav-icon">≡</span>
+          <span>Audit Logs</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="session-user">
+          Signed in: <strong th:text="${session.username}">APP_DBA_ADMIN</strong>
+        </div>
+        <a class="logout-link" href="/logout">Dang xuat</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="topbar">
+        <div class="page-title">
+          <div>
+            <h1>Create New User</h1>
+            <div class="subtitle">Create a new Oracle database user</div>
+          </div>
+        </div>
+        <a class="button secondary" href="/admin/users">&larr; Back to Users</a>
+      </section>
+
+      <form action="/admin/users/create" method="post">
+        <!-- Section 1: User Information -->
+        <div class="panel">
+          <div class="panel-header">
+            User Information
+          </div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <div class="field">
+                <label for="username">Username <span class="required">*</span></label>
+                <input id="username" name="username" placeholder="APP_TEST_USER_DEMO" required />
+                <div class="field-hint">Phải bắt đầu bằng <strong>APP_</strong>, chỉ chứa chữ hoa, số, _, $, #</div>
+                <span class="field-error" id="usernameError">⚠ Tên người dùng phải bắt đầu bằng <strong>APP_</strong> (ví dụ: APP_TEST_USER)</span>
+              </div>
+              <div class="field">
+                <label for="password">Password <span class="required">*</span></label>
+                <input id="password" name="password" type="password" required />
+              </div>
+              <div class="field">
+                <label for="defaultTablespace">Default Tablespace</label>
+                <select id="defaultTablespace" name="defaultTablespace">
+                  <option th:each="ts : ${permanentTablespaces}" th:value="${ts}" th:text="${ts}" th:selected="${ts == 'TS_USERS'}">TS_USERS</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="temporaryTablespace">Temporary Tablespace</label>
+                <select id="temporaryTablespace" name="temporaryTablespace">
+                  <option th:each="ts : ${temporaryTablespaces}" th:value="${ts}" th:text="${ts}" th:selected="${ts == 'TEMP'}">TEMP</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="profile">Profile</label>
+                <select id="profile" name="profile">
+                  <option th:each="prof : ${profiles}" th:value="${prof}" th:text="${prof}" th:selected="${prof == 'APP_PROFILE_USER'}">APP_PROFILE_USER</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="grantedRole">Initial Role</label>
+                <select id="grantedRole" name="grantedRole">
+                  <option value="">-- No initial role --</option>
+                  <option th:each="r : ${roles}" th:value="${r}" th:text="${r}" th:selected="${r == 'APP_ROLE_USER'}">APP_ROLE_USER</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Quota Settings (Optional) -->
+        <div class="panel">
+          <div class="panel-divider-title">
+            Quota Settings (Optional)
+          </div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <div class="field">
+                <label for="quotaTablespace">Tablespace for Quota</label>
+                <select id="quotaTablespace" name="quotaTablespace">
+                  <option th:each="ts : ${permanentTablespaces}" th:value="${ts}" th:text="${ts}" th:selected="${ts == 'TS_USERS'}">TS_USERS</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="quota">Quota Value</label>
+                <select id="quota" name="quota">
+                  <option value="50M" selected>50 MB</option>
+                  <option value="10M">10 MB</option>
+                  <option value="100M">100 MB</option>
+                  <option value="500M">500 MB</option>
+                  <option value="UNLIMITED">UNLIMITED</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button class="button primary" type="submit">✓ Create User</button>
+          <a class="button grey" href="/admin/users">✕ Cancel</a>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      const usernameInput = document.getElementById('username');
+      const usernameError = document.getElementById('usernameError');
+      const submitBtn = document.querySelector('button[type="submit"]');
+
+      function validateUsername() {
+        const val = usernameInput.value.trim().toUpperCase();
+        const valid = val.startsWith('APP_') && val.length > 4;
+        if (val.length === 0) {
+          usernameInput.classList.remove('input-error');
+          usernameError.style.display = 'none';
+          submitBtn.disabled = false;
+        } else if (!valid) {
+          usernameInput.classList.add('input-error');
+          usernameError.style.display = 'block';
+          submitBtn.disabled = true;
+        } else {
+          usernameInput.classList.remove('input-error');
+          usernameError.style.display = 'none';
+          submitBtn.disabled = false;
+        }
+      }
+
+      usernameInput.addEventListener('input', validateUsername);
+
+      // Auto uppercase khi gõ
+      usernameInput.addEventListener('blur', function () {
+        if (this.value) this.value = this.value.toUpperCase();
+      });
+    })();
+  </script>
+</body>
+
+</html>

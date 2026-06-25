@@ -1,13 +1,640 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Admin Dashboard</title>
-  </head>
-  <body>
-    <h1>👑 Admin Dashboard</h1>
-    <p>Xin chào: <b th:text="${session.username}">USER</b></p>
-    <p><i>Member 1 code phần này</i></p>
-    <a href="/logout">Đăng xuất</a>
-  </body>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oracle DBA - Dashboard</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #d8dbe0;
+      color: #101214;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      font-size: 14px;
+    }
+
+    button,
+    input,
+    select,
+    a {
+      font: inherit;
+    }
+
+    /* ── Shell ── */
+    .app-shell {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: #202327;
+      border-right: 1px solid #111315;
+      color: #d7dbe0;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .brand {
+      align-items: center;
+      border-bottom: 1px solid #34383e;
+      display: flex;
+      gap: 10px;
+      height: 64px;
+      padding: 0 18px;
+    }
+
+    .brand-mark {
+      align-items: center;
+      background: #111315;
+      border: 1px solid #454a51;
+      border-radius: 4px;
+      display: inline-flex;
+      height: 32px;
+      justify-content: center;
+      width: 32px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .brand-subtitle {
+      color: #9aa2ad;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .nav {
+      padding: 12px 8px;
+    }
+
+    .nav-item {
+      align-items: center;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      color: #c8cdd4;
+      display: flex;
+      gap: 10px;
+      min-height: 38px;
+      padding: 8px 10px;
+      text-decoration: none;
+    }
+
+    .nav-item:hover {
+      background: #2c3036;
+      border-color: #3b4047;
+    }
+
+    .nav-item.active {
+      background: #3b3f46;
+      border-color: #565c65;
+      color: #fff;
+    }
+
+    .nav-icon {
+      align-items: center;
+      color: #b6bdc7;
+      display: inline-flex;
+      font-size: 15px;
+      justify-content: center;
+      width: 20px;
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid #34383e;
+      margin-top: auto;
+      padding: 14px 16px;
+    }
+
+    .session-user {
+      color: #bfc5ce;
+      font-size: 12px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .logout-link {
+      align-items: center;
+      background: #151719;
+      border: 1px solid #3e434a;
+      border-radius: 4px;
+      color: #e5e7eb;
+      display: flex;
+      justify-content: center;
+      min-height: 34px;
+      text-decoration: none;
+    }
+
+    .logout-link:hover {
+      background: #1e2124;
+    }
+
+    /* ── Main ── */
+    .main {
+      min-width: 0;
+      padding: 24px;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      background: #f2f3f5;
+      border: 1px solid #c8ccd1;
+      border-radius: 6px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      min-height: 76px;
+      padding: 16px 20px;
+    }
+
+    .page-title {
+      align-items: center;
+      display: flex;
+      gap: 14px;
+    }
+
+    .page-icon {
+      align-items: center;
+      background: #2e333a;
+      border-radius: 6px;
+      color: #fff;
+      display: inline-flex;
+      height: 40px;
+      justify-content: center;
+      width: 40px;
+      font-size: 18px;
+    }
+
+    h1 {
+      color: #171a1f;
+      font-size: 22px;
+      line-height: 1.15;
+      margin: 0;
+    }
+
+    .subtitle {
+      color: #666d76;
+      font-size: 13px;
+      margin-top: 3px;
+    }
+
+    .topbar-time {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(44, 101, 200, 0.08);
+      border: 1px solid rgba(44, 101, 200, 0.15);
+      border-radius: 20px;
+      color: #2c65c8;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'SF Mono', ui-monospace, Consolas, monospace;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 8px rgba(44, 101, 200, 0.05);
+      transition: all 0.3s ease;
+    }
+    
+    .topbar-time:hover {
+      background: rgba(44, 101, 200, 0.12);
+      box-shadow: 0 4px 12px rgba(44, 101, 200, 0.1);
+      transform: translateY(-1px);
+    }
+
+    /* ── Stat cards row ── */
+    .stat-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border: 1px solid #e0e3e7;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .06);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+
+    .stat-card.blue::before {
+      background: #2c65c8;
+    }
+
+    .stat-card.green::before {
+      background: #1e8449;
+    }
+
+    .stat-card.purple::before {
+      background: #7d3c98;
+    }
+
+    .stat-card.amber::before {
+      background: #d68910;
+    }
+
+    .stat-label {
+      color: #6b727c;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      color: #171a1f;
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .stat-sub {
+      color: #888f98;
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .stat-icon {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 36px;
+      opacity: 0.08;
+    }
+
+    /* ── Detail panels row ── */
+    .panel-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-bottom: 24px;
+    }
+
+    .dash-panel {
+      background: #fff;
+      border: 1px solid #e0e3e7;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .06);
+      overflow: hidden;
+    }
+
+    .dash-panel-header {
+      align-items: center;
+      background: #2d3239;
+      border-bottom: 1px solid #171a1f;
+      color: #fff;
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      min-height: 46px;
+      padding: 8px 16px;
+    }
+
+    .dash-panel-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .dash-panel-link {
+      color: #7eb1ff;
+      font-size: 12px;
+      text-decoration: none;
+    }
+
+    .dash-panel-link:hover {
+      text-decoration: underline;
+    }
+
+    .dash-panel-body {
+      padding: 0;
+    }
+
+    .metric-row {
+      align-items: center;
+      border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 16px;
+    }
+
+    .metric-row:last-child {
+      border-bottom: none;
+    }
+
+    .metric-name {
+      color: #4a5260;
+      font-size: 13px;
+    }
+
+    .metric-val {
+      font-size: 16px;
+      font-weight: 700;
+      color: #171a1f;
+    }
+
+    .metric-val.green {
+      color: #1e8449;
+    }
+
+    .metric-val.red {
+      color: #b03a2e;
+    }
+
+    .metric-val.amber {
+      color: #d68910;
+    }
+
+    .metric-val.blue {
+      color: #2c65c8;
+    }
+
+    /* ── Quick actions ── */
+    .quick-actions {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-bottom: 8px;
+    }
+
+    .qa-btn {
+      align-items: center;
+      background: #f2f3f5;
+      border: 1px solid #c8ccd1;
+      border-radius: 6px;
+      color: #171a1f;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 80px;
+      justify-content: center;
+      padding: 14px;
+      text-decoration: none;
+      transition: background .12s, border-color .12s;
+    }
+
+    .qa-btn:hover {
+      background: #e5e7eb;
+      border-color: #a0a5ad;
+    }
+
+    .qa-icon {
+      font-size: 22px;
+    }
+
+    .qa-label {
+      color: #3d444d;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    @media (max-width: 1100px) {
+      .stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .stat-grid,
+      .panel-grid,
+      .quick-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">DB</span>
+        <div>
+          <div class="brand-title">Oracle DBA</div>
+          <div class="brand-subtitle">Administration Console</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-item active" href="/admin/dashboard"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span><span>Dashboard</span></a>
+        <a class="nav-item" href="/admin/users"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span>User Management</span></a>
+        <a class="nav-item" href="/admin/roles"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span><span>Role Management</span></a>
+        <a class="nav-item" href="/admin/profiles"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span>Profile Management</span></a>
+        <a class="nav-item" href="/admin/audit-logs"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></span><span>Audit Logs</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="session-user">Signed in: <strong th:text="${session.username}">APP_DBA_ADMIN</strong></div>
+        <a class="logout-link" href="/logout">Logout</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="topbar">
+        <div class="page-title">
+          <span class="page-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span>
+          <div>
+            <h1>Dashboard Overview</h1>
+            <div class="subtitle">Oracle database security management console — real-time system metrics</div>
+          </div>
+        </div>
+        <div class="topbar-time" id="clockDisplay">Loading...</div>
+      </section>
+
+      <!-- ── Stat cards ── -->
+      <div class="stat-grid">
+        <div class="stat-card blue">
+          <div class="stat-label">Total Users</div>
+          <div class="stat-value" th:text="${userCount ?: 0}">0</div>
+          <div class="stat-sub" th:text="${openUsers ?: 0} + ' active / ' + (${lockedUsers ?: 0}) + ' locked'">0 active
+          </div>
+          <div class="stat-icon">👤</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Total Roles</div>
+          <div class="stat-value" th:text="${roleCount ?: 0}">0</div>
+          <div class="stat-sub" th:text="${passwordRoles ?: 0} + ' with password'">0 with password</div>
+          <div class="stat-icon">🛡</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-label">Total Profiles</div>
+          <div class="stat-value" th:text="${profileCount ?: 0}">0</div>
+          <div class="stat-sub" th:text="${inUseProfiles ?: 0} + ' in use / ' + (${unusedProfiles ?: 0}) + ' unused'">0
+            in use</div>
+          <div class="stat-icon">📋</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-label">Audit Events</div>
+          <div class="stat-value" th:text="${auditCount ?: 0}">0</div>
+          <div class="stat-sub" th:text="${failedLogons ?: 0} + ' failed logon(s)'">0 failed logons</div>
+          <div class="stat-icon">📋</div>
+        </div>
+      </div>
+
+      <!-- ── Detail panels ── -->
+      <div class="panel-grid">
+
+        <!-- User Details -->
+        <div class="dash-panel">
+          <div class="dash-panel-header">
+            <div class="dash-panel-title">User Management</div>
+            <a class="dash-panel-link" href="/admin/users">View all &rarr;</a>
+          </div>
+          <div class="dash-panel-body">
+            <div class="metric-row">
+              <span class="metric-name">Total application users</span>
+              <span class="metric-val blue" th:text="${userCount ?: 0}">0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">OPEN — active accounts</span>
+              <span class="metric-val green" th:text="${openUsers ?: 0}">0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">LOCKED — locked accounts</span>
+              <span class="metric-val red" th:text="${lockedUsers ?: 0}">0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">EXPIRED — expired passwords</span>
+              <span class="metric-val amber" th:text="${expiredUsers ?: 0}">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Role Details -->
+        <div class="dash-panel">
+          <div class="dash-panel-header">
+            <div class="dash-panel-title">Role Management</div>
+            <a class="dash-panel-link" href="/admin/roles">View all &rarr;</a>
+          </div>
+          <div class="dash-panel-body">
+            <div class="metric-row">
+              <span class="metric-name">Total application roles</span>
+              <span class="metric-val blue" th:text="${roleCount ?: 0}">0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">PASSWORD — roles with password</span>
+              <span class="metric-val amber" th:text="${passwordRoles ?: 0}">0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">NONE — no password required</span>
+              <span class="metric-val green" th:text="${noneRoles ?: 0}">0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">EXTERNAL — external authentication</span>
+              <span class="metric-val" th:text="${externalRoles ?: 0}">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Details -->
+        <div class="dash-panel">
+          <div class="dash-panel-header">
+            <div class="dash-panel-title">Profile Management</div>
+            <a class="dash-panel-link" href="/admin/profiles">View all &rarr;</a>
+          </div>
+          <div class="dash-panel-body">
+            <div class="metric-row">
+              <span class="metric-name">Total application profiles</span>
+              <span class="metric-val blue" th:text="${profileCount ?: 0}">0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">In use — assigned to users</span>
+              <span class="metric-val green" th:text="${inUseProfiles ?: 0}">0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">Unused — not assigned</span>
+              <span class="metric-val amber" th:text="${unusedProfiles ?: 0}">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audit Details -->
+        <div class="dash-panel">
+          <div class="dash-panel-header">
+            <div class="dash-panel-title">Audit Summary</div>
+            <a class="dash-panel-link" href="/admin/audit-logs">View logs &rarr;</a>
+          </div>
+          <div class="dash-panel-body">
+            <div class="metric-row">
+              <span class="metric-name">Total events sampled</span>
+              <span class="metric-val blue" th:text="${auditCount ?: 0}">0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">Failed logon attempts</span>
+              <span class="metric-val red" th:text="${failedLogons ?: 0}">0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">Distinct active users</span>
+              <span class="metric-val green" th:text="${activeUsers ?: 0}">0</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-name">Database objects accessed</span>
+              <span class="metric-val" th:text="${objectsAffected ?: 0}">0</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Live clock
+    function updateClock() {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const d = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      const t = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      
+      const svgIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
+      
+      document.getElementById('clockDisplay').innerHTML = `${svgIcon} <span>${d}</span> <span style="opacity:0.4;margin:0 2px">•</span> <span>${t}</span>`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+
 </html>

@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile Settings - Oracle DBA</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #d8dbe0; color: #101214; font-family: "Segoe UI", Tahoma, Arial, sans-serif; font-size: 14px; }
+    button, input, select { font: inherit; }
+    .app-shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar { background: #202327; border-right: 1px solid #111315; color: #d7dbe0; display: flex; flex-direction: column; min-width: 0; position: sticky; top: 0; height: 100vh; }
+    .brand { align-items: center; border-bottom: 1px solid #34383e; display: flex; gap: 10px; height: 64px; padding: 0 18px; }
+    .brand-mark { align-items: center; background: #111315; border: 1px solid #454a51; border-radius: 4px; display: inline-flex; height: 32px; justify-content: center; width: 32px; }
+    .brand-title { font-size: 16px; font-weight: 700; letter-spacing: 0; line-height: 1.1; }
+    .brand-subtitle { color: #9aa2ad; font-size: 11px; margin-top: 2px; }
+    .nav { padding: 12px 8px; }
+    .nav-item { align-items: center; border: 1px solid transparent; border-radius: 4px; color: #c8cdd4; display: flex; gap: 10px; min-height: 38px; padding: 8px 10px; text-decoration: none; }
+    .nav-item:hover { background: #2c3036; border-color: #3b4047; }
+    .nav-item.active { background: #3b3f46; border-color: #565c65; color: #ffffff; }
+    .nav-icon { align-items: center; color: #b6bdc7; display: inline-flex; font-size: 15px; justify-content: center; width: 20px; }
+    .sidebar-footer { border-top: 1px solid #34383e; margin-top: auto; padding: 14px 16px; }
+    .session-user { color: #bfc5ce; font-size: 12px; margin-bottom: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .logout-link { align-items: center; background: #151719; border: 1px solid #3e434a; border-radius: 4px; color: #e5e7eb; display: flex; justify-content: center; min-height: 34px; text-decoration: none; }
+    .main { min-width: 0; padding: 22px; }
+    .topbar, .panel { background: #f2f3f5; border: 1px solid #c8ccd1; border-radius: 4px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+    .topbar { align-items: center; display: flex; gap: 16px; justify-content: space-between; margin-bottom: 18px; min-height: 76px; padding: 16px 18px; }
+    .page-title { align-items: center; display: flex; gap: 12px; min-width: 0; }
+    .page-icon { align-items: center; background: #2e333a; border-radius: 4px; color: #ffffff; display: inline-flex; height: 38px; justify-content: center; width: 38px; }
+    h1 { color: #171a1f; font-size: 22px; line-height: 1.15; margin: 0; }
+    .subtitle { color: #666d76; font-size: 13px; margin-top: 3px; }
+    .button { align-items: center; border: 1px solid transparent; border-radius: 4px; cursor: pointer; display: inline-flex; gap: 7px; justify-content: center; min-height: 34px; padding: 7px 14px; text-decoration: none; white-space: nowrap; font-weight: 600; font-size: 13px; }
+    .button.primary { background: #2c65c8; border-color: #1f55b0; color: #ffffff; }
+    .button.primary:hover { background: #2251a3; }
+    .button.secondary { background: #ffffff; border-color: #babfc7; color: #3d444d; }
+    .button.secondary:hover { background: #f3f4f6; }
+    .message { border-radius: 4px; margin-bottom: 14px; padding: 10px 12px; }
+    .message.success { background: #e3f3e8; border: 1px solid #9fcbaa; color: #1f5f2e; }
+    .message.error { background: #f7e3e5; border: 1px solid #d6949c; color: #7e1f2a; }
+    .panel { background: #ffffff; border: 1px solid #c8ccd1; border-radius: 6px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); margin-bottom: 20px; overflow: hidden; }
+    .panel-header { align-items: center; background: #2d3239; border-bottom: 1px solid #171a1f; color: #ffffff; display: flex; gap: 10px; min-height: 42px; padding: 10px 16px; font-weight: 700; font-size: 14px; }
+    .panel-body { padding: 20px; }
+    .panel-divider-title { font-size: 14px; font-weight: 700; color: #171a1f; padding: 12px 0 6px 0; border-top: 1px solid #e5e7eb; margin-top: 20px; }
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .field label { font-weight: 600; color: #3d444d; font-size: 13px; }
+    .field label span.required { color: #dc3545; }
+    .field input, .field select { background: #ffffff; border: 1px solid #babfc7; border-radius: 4px; color: #101214; height: 36px; padding: 6px 12px; width: 100%; outline: none; transition: border-color 0.15s; }
+    .field input:focus, .field select:focus { border-color: #2c65c8; box-shadow: 0 0 0 2px rgba(44, 101, 200, 0.15); }
+    .field-hint { color: #6c757d; font-size: 12px; margin-top: 2px; }
+    .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+    @media (max-width: 920px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">DB</span>
+        <div>
+          <div class="brand-title">Oracle DBA</div>
+          <div class="brand-subtitle">Administration Console</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-item" href="/admin/dashboard">
+          <span class="nav-icon">□</span>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-item" href="/admin/users">
+          <span class="nav-icon">▦</span>
+          <span>User Management</span>
+        </a>
+        <a class="nav-item" href="/admin/roles">
+          <span class="nav-icon">◇</span>
+          <span>Role Management</span>
+        </a>
+        <a class="nav-item active" href="/admin/profiles">
+          <span class="nav-icon">▤</span>
+          <span>Profile Management</span>
+        </a>
+        <a class="nav-item" href="/admin/audit-logs">
+          <span class="nav-icon">≡</span>
+          <span>Audit Logs</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="session-user">
+          Signed in: <strong th:text="${session.username}">APP_DBA_ADMIN</strong>
+        </div>
+        <a class="logout-link" href="/logout">Dang xuat</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="topbar">
+        <div class="page-title">
+          <span class="page-icon">▤</span>
+          <div>
+            <h1>Profile Settings</h1>
+            <div class="subtitle" th:text="'Edit limits for ' + ${profile.profileName}">Edit limits for APP_PF_USER</div>
+          </div>
+        </div>
+        <a class="button secondary" href="/admin/profiles">&larr; Back to Profiles</a>
+      </section>
+
+      <!-- Raw inputs parsed by Javascript -->
+      <input type="hidden" id="rawSessions" th:value="${profile.sessionsPerUser}" />
+      <input type="hidden" id="rawConnect" th:value="${profile.connectTime}" />
+      <input type="hidden" id="rawIdle" th:value="${profile.idleTime}" />
+
+      <div class="panel">
+        <div class="panel-header" th:text="'Profile Settings: ' + ${profile.profileName}">Profile Settings</div>
+        <div class="panel-body">
+          <form action="/admin/profiles/update" method="post" onsubmit="return prepareFormSubmit('e_sessionsSelect', 'e_sessionsInput', 'e_sessionsHidden', 'e_connectSelect', 'e_connectInput', 'e_connectHidden', 'e_idleSelect', 'e_idleInput', 'e_idleHidden')">
+            
+            <div class="field">
+              <label>Profile Name</label>
+              <input type="text" th:value="${profile.profileName}" disabled />
+              <input type="hidden" name="profileName" th:value="${profile.profileName}" />
+              <div class="field-hint">Profile name must start with a letter and contain only letters, numbers, _, $, or #</div>
+            </div>
+
+            <div class="panel-divider-title">Resource Limits</div>
+            <div class="field-hint" style="margin-bottom: 15px;">Each resource can be set to: UNLIMITED, DEFAULT (inherit from DEFAULT profile), or a specific numeric value.</div>
+
+            <div class="field">
+              <label>Sessions Per User</label>
+              <div style="display: flex; gap: 8px;">
+                <select id="e_sessionsSelect" onchange="toggleCustomInput('e_sessionsSelect', 'e_sessionsInput')" style="flex: 1;">
+                  <option value="UNLIMITED">UNLIMITED</option>
+                  <option value="DEFAULT">DEFAULT</option>
+                  <option value="CUSTOM">Custom Value</option>
+                </select>
+                <input type="number" id="e_sessionsInput" style="flex: 1; display: none;" placeholder="e.g. 5" min="1"/>
+                <input type="hidden" name="sessionsPerUser" id="e_sessionsHidden" />
+              </div>
+              <div class="field-hint">Maximum number of concurrent sessions a user can have</div>
+            </div>
+
+            <div class="field">
+              <label>Connect Time (minutes)</label>
+              <div style="display: flex; gap: 8px;">
+                <select id="e_connectSelect" onchange="toggleCustomInput('e_connectSelect', 'e_connectInput')" style="flex: 1;">
+                  <option value="UNLIMITED">UNLIMITED</option>
+                  <option value="DEFAULT">DEFAULT</option>
+                  <option value="CUSTOM">Custom Value</option>
+                </select>
+                <input type="number" id="e_connectInput" style="flex: 1; display: none;" placeholder="e.g. 60" min="1"/>
+                <input type="hidden" name="connectTime" id="e_connectHidden" />
+              </div>
+              <div class="field-hint">Maximum elapsed time for a session</div>
+            </div>
+
+            <div class="field">
+              <label>Idle Time (minutes)</label>
+              <div style="display: flex; gap: 8px;">
+                <select id="e_idleSelect" onchange="toggleCustomInput('e_idleSelect', 'e_idleInput')" style="flex: 1;">
+                  <option value="UNLIMITED">UNLIMITED</option>
+                  <option value="DEFAULT">DEFAULT</option>
+                  <option value="CUSTOM">Custom Value</option>
+                </select>
+                <input type="number" id="e_idleInput" style="flex: 1; display: none;" placeholder="e.g. 15" min="1"/>
+                <input type="hidden" name="idleTime" id="e_idleHidden" />
+              </div>
+              <div class="field-hint">Maximum idle time before session is terminated</div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="button primary">Update Profile</button>
+              <a href="/admin/profiles" class="button secondary">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    window.onload = function() {
+      const initField = (rawId, selectId, inputId) => {
+        const rawVal = document.getElementById(rawId).value;
+        const select = document.getElementById(selectId);
+        const input = document.getElementById(inputId);
+        if (rawVal === 'UNLIMITED' || rawVal === 'DEFAULT') {
+          select.value = rawVal;
+          input.style.display = 'none';
+          input.required = false;
+        } else {
+          select.value = 'CUSTOM';
+          input.value = rawVal;
+          input.style.display = 'block';
+          input.required = true;
+        }
+      };
+      initField('rawSessions', 'e_sessionsSelect', 'e_sessionsInput');
+      initField('rawConnect', 'e_connectSelect', 'e_connectInput');
+      initField('rawIdle', 'e_idleSelect', 'e_idleInput');
+    };
+
+    function toggleCustomInput(selectId, inputId) {
+      const select = document.getElementById(selectId);
+      const input = document.getElementById(inputId);
+      if (select.value === 'CUSTOM') {
+        input.style.display = 'block';
+        input.required = true;
+      } else {
+        input.style.display = 'none';
+        input.required = false;
+        input.value = '';
+      }
+    }
+
+    function prepareFormSubmit(sessionsSelectId, sessionsInputId, sessionsHiddenId, connectSelectId, connectInputId, connectHiddenId, idleSelectId, idleInputId, idleHiddenId) {
+      const setVal = (selectId, inputId, hiddenId) => {
+        const select = document.getElementById(selectId);
+        const input = document.getElementById(inputId);
+        const hidden = document.getElementById(hiddenId);
+        if (select.value === 'CUSTOM') {
+          hidden.value = input.value;
+        } else {
+          hidden.value = select.value;
+        }
+      };
+      setVal(sessionsSelectId, sessionsInputId, sessionsHiddenId);
+      setVal(connectSelectId, connectInputId, connectHiddenId);
+      setVal(idleSelectId, idleInputId, idleHiddenId);
+      return true;
+    }
+  </script>
+</body>
+
+</html>

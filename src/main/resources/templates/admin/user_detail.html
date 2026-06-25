@@ -1,0 +1,1396 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Detail - Oracle DBA</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #d8dbe0;
+      color: #101214;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      font-size: 14px;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: #202327;
+      border-right: 1px solid #111315;
+      color: #d7dbe0;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .brand {
+      align-items: center;
+      border-bottom: 1px solid #34383e;
+      display: flex;
+      gap: 10px;
+      height: 64px;
+      padding: 0 18px;
+    }
+
+    .brand-mark {
+      align-items: center;
+      background: #111315;
+      border: 1px solid #454a51;
+      border-radius: 4px;
+      display: inline-flex;
+      height: 32px;
+      justify-content: center;
+      width: 32px;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0;
+      line-height: 1.1;
+    }
+
+    .nav {
+      padding: 12px 8px;
+    }
+
+    .nav-item {
+      align-items: center;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      color: #c8cdd4;
+      display: flex;
+      gap: 10px;
+      min-height: 38px;
+      padding: 8px 10px;
+      text-decoration: none;
+    }
+
+    .nav-item:hover {
+      background: #2c3036;
+      border-color: #3b4047;
+    }
+
+    .nav-item.active {
+      background: #3b3f46;
+      border-color: #565c65;
+      color: #ffffff;
+    }
+
+    .nav-icon {
+      align-items: center;
+      color: #b6bdc7;
+      display: inline-flex;
+      font-size: 15px;
+      justify-content: center;
+      width: 20px;
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid #34383e;
+      margin-top: auto;
+      padding: 14px 16px;
+    }
+
+    .session-user {
+      color: #bfc5ce;
+      font-size: 12px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .logout-link {
+      align-items: center;
+      background: #151719;
+      border: 1px solid #3e434a;
+      border-radius: 4px;
+      color: #e5e7eb;
+      display: flex;
+      justify-content: center;
+      min-height: 34px;
+      text-decoration: none;
+    }
+
+    .main {
+      min-width: 0;
+      padding: 22px;
+    }
+
+    .topbar {
+      background: #ffffff;
+      border: 1px solid #c8ccd1;
+      border-radius: 6px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      align-items: center;
+      display: flex;
+      gap: 16px;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      min-height: 76px;
+      padding: 16px 18px;
+    }
+
+    .page-title {
+      align-items: center;
+      display: flex;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .page-icon {
+      align-items: center;
+      background: #eef2ff;
+      border-radius: 6px;
+      color: #2c65c8;
+      display: inline-flex;
+      height: 42px;
+      justify-content: center;
+      width: 42px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    h1 {
+      color: #171a1f;
+      font-size: 20px;
+      line-height: 1.15;
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      color: #666d76;
+      font-size: 13px;
+      margin-top: 3px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .button {
+      align-items: center;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      gap: 7px;
+      justify-content: center;
+      min-height: 34px;
+      padding: 7px 14px;
+      text-decoration: none;
+      white-space: nowrap;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .button.primary {
+      background: #2c65c8;
+      border-color: #1f55b0;
+      color: #ffffff;
+    }
+
+    .button.primary:hover {
+      background: #2251a3;
+    }
+
+    .button.secondary {
+      background: #ffffff;
+      border-color: #babfc7;
+      color: #3d444d;
+    }
+
+    .button.secondary:hover {
+      background: #f3f4f6;
+    }
+
+    .button.warning {
+      background: #e3a008;
+      border-color: #c28807;
+      color: #ffffff;
+    }
+
+    .button.warning:hover {
+      background: #c28807;
+    }
+
+    .button.danger {
+      background: #b93442;
+      border-color: #9d2633;
+      color: #ffffff;
+    }
+
+    .button.danger:hover {
+      background: #9d2633;
+    }
+
+    .button.grey {
+      background: #6c757d;
+      border-color: #5a6268;
+      color: #ffffff;
+    }
+
+    .button.grey:hover {
+      background: #5a6268;
+    }
+
+    .message {
+      border-radius: 4px;
+      margin-bottom: 14px;
+      padding: 10px 12px;
+    }
+
+    .message.success {
+      background: #e3f3e8;
+      border: 1px solid #9fcbaa;
+      color: #1f5f2e;
+    }
+
+    .message.error {
+      background: #f7e3e5;
+      border: 1px solid #d6949c;
+      color: #7e1f2a;
+    }
+
+    .panel {
+      background: #ffffff;
+      border: 1px solid #c8ccd1;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      align-items: center;
+      background: #2d3239;
+      border-bottom: 1px solid #171a1f;
+      color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      min-height: 44px;
+      padding: 6px 16px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .info-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #eef2f6;
+    }
+
+    .info-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .info-label {
+      font-weight: 600;
+      color: #3d444d;
+      width: 240px;
+    }
+
+    .info-value {
+      color: #101214;
+    }
+
+    .status-badge {
+      border-radius: 3px;
+      display: inline-flex;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+      padding: 5px 8px;
+    }
+
+    .status-badge.open {
+      background: #dcefe4;
+      color: #176239;
+    }
+
+    .status-badge.locked {
+      background: #f4dfe2;
+      color: #8e2632;
+    }
+
+    .table-wrap {
+      overflow: auto;
+    }
+
+    table.data-table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    table.data-table th,
+    table.data-table td {
+      border-bottom: 1px solid #d6d9dd;
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    table.data-table th {
+      background: #f7f8f9;
+      color: #23272d;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    table.data-table tbody tr:hover {
+      background: #f1f5f9;
+    }
+
+    .panel-legend {
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 12px 16px;
+      font-size: 12px;
+      color: #64748b;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .panel-legend.alert {
+      background: #ecfeff;
+      border-top: 1px solid #c5f2f7;
+      color: #0891b2;
+    }
+
+    .empty-state {
+      color: #64748b;
+      padding: 24px 16px;
+      text-align: left;
+    }
+
+    .badge { background: #7f8c8d; color: #fff; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight: bold; display: inline-block; }
+    .badge-yes { background: #27ae60; }
+    .badge-no { background: #7f8c8d; }
+
+    /* Modal Styling */
+    .modal {
+      align-items: center;
+      background: rgba(0, 0, 0, 0.52);
+      display: none;
+      inset: 0;
+      justify-content: center;
+      padding: 20px;
+      position: fixed;
+      z-index: 100;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .dialog {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      max-height: min(720px, 92vh);
+      overflow: auto;
+      width: min(640px, 100%);
+    }
+
+    .dialog-header {
+      align-items: center;
+      background: #2d3239;
+      color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      min-height: 44px;
+      padding: 10px 16px;
+    }
+
+    .dialog-title {
+      font-weight: 700;
+    }
+
+    .dialog-close {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .dialog-close:hover {
+      color: #ffffff;
+    }
+
+    .dialog-body {
+      padding: 20px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .form-grid.single {
+      grid-template-columns: 1fr;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-weight: 600;
+      color: #3d444d;
+      font-size: 13px;
+    }
+
+    .field label span.required {
+      color: #dc3545;
+    }
+
+    .field input,
+    .field select {
+      background: #ffffff;
+      border: 1px solid #babfc7;
+      border-radius: 4px;
+      color: #101214;
+      height: 36px;
+      padding: 6px 12px;
+      width: 100%;
+      outline: none;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: #2c65c8;
+    }
+
+    .field-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .field-checkbox label {
+      font-weight: 600;
+      color: #3d444d;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .columns-container input[type="checkbox"] {
+      width: 16px !important;
+      height: 16px !important;
+      min-height: 16px !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      cursor: pointer;
+    }
+
+    .dialog-footer {
+      align-items: center;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      padding: 12px 16px;
+    }
+
+    @media (max-width: 920px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        min-height: auto;
+      }
+
+      .nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .sidebar-footer {
+        display: none;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">DB</span>
+        <div>
+          <div class="brand-title">Oracle DBA</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-item" href="/admin/dashboard">
+          <span class="nav-icon">□</span>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-item active" href="/admin/users">
+          <span class="nav-icon">▦</span>
+          <span>User Management</span>
+        </a>
+        <a class="nav-item" href="/admin/roles">
+          <span class="nav-icon">◇</span>
+          <span>Role Management</span>
+        </a>
+        <a class="nav-item" href="/admin/profiles">
+          <span class="nav-icon">▤</span>
+          <span>Profile Management</span>
+        </a>
+        <a class="nav-item" href="/admin/audit-logs">
+          <span class="nav-icon">≡</span>
+          <span>Audit Logs</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="session-user">
+          Signed in: <strong th:text="${session.username}">APP_DBA_ADMIN</strong>
+        </div>
+        <a class="logout-link" href="/logout">Logout</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="topbar">
+        <div class="page-title">
+          <div>
+            <h1 th:text="'User Details: ' + ${selectedUser.username}">User Details: APP_TEST_USER_DEMO</h1>
+            <div class="subtitle">Detailed information about Oracle user</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" class="button warning" type="button" data-open-modal="editUserModal">Edit</button>
+          <a class="button secondary" href="/admin/users">&larr; Back to Users</a>
+        </div>
+      </section>
+
+      <div class="message success" th:if="${success}" th:text="${success}"></div>
+      <div class="message error" th:if="${error}">
+        <span th:text="${error}"></span>
+        <span th:if="${errorCode}"> - </span>
+        <strong th:if="${errorCode}" th:text="${errorCode}"></strong>
+      </div>
+      <!-- Read-only notice for system admin user -->
+      <div th:if="${selectedUser.username == 'APP_DBA_ADMIN'}" style="background:#fff8e1; border:1px solid #ffe082; border-radius:4px; padding:10px 14px; margin-bottom:14px; color:#795548; display:flex; gap:8px; align-items:center;">
+        <span style="font-size:18px;">🛡</span>
+        <span><strong>Chế độ xem (Read-only):</strong> Đây là tài khoản quản trị hệ thống <strong>APP_DBA_ADMIN</strong>. Bạn chỉ có thể xem thông tin, không thể sửa đổi hay phân quyền cho tài khoản này.</span>
+      </div>
+
+      <!-- Basic Information Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Basic Information</div>
+        </div>
+        <div class="panel-body">
+          <table class="info-table">
+            <tbody>
+              <tr>
+                <td class="info-label">Username:</td>
+                <td class="info-value" th:text="${selectedUser.username}">APP_TEST_USER_DEMO</td>
+              </tr>
+              <tr>
+                <td class="info-label">Account Status:</td>
+                <td class="info-value">
+                  <span class="status-badge" th:classappend="${selectedUser.locked} ? ' locked' : ' open'" th:text="${selectedUser.accountStatus}">OPEN</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="info-label">Created Date:</td>
+                <td class="info-value" th:text="${selectedUser.created != null ? #dates.format(selectedUser.created, 'dd/MM/yyyy HH:mm:ss') : 'N/A'}">29/12/2025 17:18:09</td>
+              </tr>
+              <tr>
+                <td class="info-label">Lock Date:</td>
+                <td class="info-value" th:text="${selectedUser.lockDate != null ? #dates.format(selectedUser.lockDate, 'dd/MM/yyyy HH:mm:ss') : 'N/A'}">N/A</td>
+              </tr>
+              <tr>
+                <td class="info-label">Expiry Date:</td>
+                <td class="info-value" th:text="${selectedUser.expiryDate != null ? #dates.format(selectedUser.expiryDate, 'dd/MM/yyyy HH:mm:ss') : 'N/A'}">27/06/2026 17:18:09</td>
+              </tr>
+              <tr>
+                <td class="info-label">Default Tablespace:</td>
+                <td class="info-value" th:text="${selectedUser.defaultTablespace}">TS_USERS</td>
+              </tr>
+              <tr>
+                <td class="info-label">Temporary Tablespace:</td>
+                <td class="info-value" th:text="${selectedUser.temporaryTablespace}">TEMP</td>
+              </tr>
+              <tr>
+                <td class="info-label">Profile:</td>
+                <td class="info-value" th:text="${selectedUser.profile}">APP_PROFILE_USER</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Change Profile Panel - hidden for system admin -->
+      <div class="panel" th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}">
+        <div class="panel-header">
+          <div class="panel-title">Change Profile</div>
+        </div>
+        <div class="panel-body">
+          <form th:action="@{/admin/users/{username}/change-profile(username=${selectedUser.username})}" method="post">
+            <div style="display: flex; gap: 12px; align-items: flex-end; max-width: 500px; flex-wrap: wrap;">
+              <div class="field" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                <label for="changeProfileSelect">Select Profile</label>
+                <select id="changeProfileSelect" name="profile">
+                  <option th:each="p : ${profiles}" th:value="${p}" th:text="${p}" th:selected="${p == selectedUser.profile}">APP_PROFILE_USER</option>
+                </select>
+              </div>
+              <button class="button primary" style="height: 36px;" type="submit">Change Profile</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Tablespace Quotas Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Tablespace Quotas</div>
+          <button th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" class="button secondary" style="min-height:30px; padding:4px 10px; color:#171a1f;" type="button" data-open-modal="setQuotaModal">+ Set Quota</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tablespace</th>
+                <th>Bytes Used</th>
+                <th>Max Bytes</th>
+                <th>Blocks Used</th>
+                <th>Max Blocks</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${#lists.isEmpty(quotas)}">
+                <td colspan="5" class="empty-state">No tablespace quotas defined for this user.</td>
+              </tr>
+              <tr th:each="q : ${quotas}">
+                <td th:text="${q.TABLESPACE_NAME}">USERS</td>
+                <td th:text="${q.BYTES}">0</td>
+                <td th:text="${q.MAX_BYTES == null or q.MAX_BYTES < 0} ? 'UNLIMITED' : ${q.MAX_BYTES}">10485760</td>
+                <td th:text="${q.BLOCKS}">0</td>
+                <td th:text="${q.MAX_BLOCKS == null or q.MAX_BLOCKS < 0} ? 'UNLIMITED' : ${q.MAX_BLOCKS}">1280</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Roles Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Roles</div>
+          <button th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" class="button secondary" style="min-height:30px; padding:4px 10px; color:#171a1f;" type="button" data-open-modal="grantRoleModal">+ Grant Role</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Role</th>
+                <th>Admin Option</th>
+                <th>Delegate Option</th>
+                <th>Default Role</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${#lists.isEmpty(userRolesWithOptions)}">
+                <td colspan="5" class="empty-state">No roles assigned to this user.</td>
+              </tr>
+              <tr th:each="r : ${userRolesWithOptions}">
+                <td th:text="${r.GRANTED_ROLE}">APP_ROLE_USER</td>
+                <td><span th:class="${'badge ' + (r.ADMIN_OPTION == 'YES' ? 'badge-yes' : 'badge-no')}" th:text="${r.ADMIN_OPTION}">NO</span></td>
+                <td><span th:class="${'badge ' + (r.DELEGATE_OPTION == 'YES' ? 'badge-yes' : 'badge-no')}" th:text="${r.DELEGATE_OPTION}">NO</span></td>
+                <td><span th:class="${'badge ' + (r.DEFAULT_ROLE == 'YES' ? 'badge-yes' : 'badge-no')}" th:text="${r.DEFAULT_ROLE}">YES</span></td>
+                <td>
+                  <form th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" th:action="@{/admin/users/{username}/revoke-role(username=${selectedUser.username})}" method="post" onsubmit="return confirm('Thu hoi role nay?');">
+                    <input type="hidden" name="roleToRevoke" th:value="${r.GRANTED_ROLE}" />
+                    <button class="button danger" style="min-height:26px; padding:2px 8px; font-size:11px;" type="submit">Revoke</button>
+                  </form>
+                  <span th:if="${selectedUser.username == 'APP_DBA_ADMIN'}" style="color:#9aa2ad; font-size:11px;">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="panel-legend">
+          <div>ⓘ <strong>Admin Option</strong>: If YES, this user can grant this role to other users.</div>
+          <div>ⓘ <strong>Delegate Option</strong>: If YES, this user can delegate grant permission to others.</div>
+          <div>ⓘ <strong>Default Role</strong>: If YES, this role is automatically enabled when user logs in.</div>
+        </div>
+      </div>
+
+      <!-- System Privileges Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">System Privileges</div>
+          <button th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" class="button secondary" style="min-height:30px; padding:4px 10px; color:#171a1f;" type="button" data-open-modal="grantSysPrivModal">+ Grant System Privilege</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Privilege</th>
+                <th>Admin Option</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${#lists.isEmpty(sysPrivs)}">
+                <td colspan="3" class="empty-state">No system privileges assigned to this user.</td>
+              </tr>
+              <tr th:each="sp : ${sysPrivs}">
+                <td th:text="${sp.PRIVILEGE}">CREATE SESSION</td>
+                <td><span th:class="${'badge ' + (sp.ADMIN_OPTION == 'YES' ? 'badge-yes' : 'badge-no')}" th:text="${sp.ADMIN_OPTION}">NO</span></td>
+                <td>
+                  <form th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" th:action="@{/admin/users/{username}/revoke-sys-priv(username=${selectedUser.username})}" method="post" onsubmit="return confirm('Thu hoi quyen nay?');">
+                    <input type="hidden" name="privilege" th:value="${sp.PRIVILEGE}" />
+                    <button class="button danger" style="min-height:26px; padding:2px 8px; font-size:11px;" type="submit">Revoke</button>
+                  </form>
+                  <span th:if="${selectedUser.username == 'APP_DBA_ADMIN'}" style="color:#9aa2ad; font-size:11px;">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Object Privileges Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Object Privileges</div>
+          <button th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" class="button secondary" style="min-height:30px; padding:4px 10px; color:#171a1f;" type="button" data-open-modal="grantObjPrivModal">+ Grant Object Privilege</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Owner</th>
+                <th>Table Name</th>
+                <th>Privilege</th>
+                <th>Grantable</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${#lists.isEmpty(tabPrivs)}">
+                <td colspan="5" class="empty-state">No object privileges granted to this user.</td>
+              </tr>
+              <tr th:each="tp : ${tabPrivs}">
+                <td th:text="${tp.OWNER}">SYSTEM</td>
+                <td th:text="${tp.TABLE_NAME}">DEMO_TABLE</td>
+                <td th:text="${tp.PRIVILEGE}">SELECT</td>
+                <td><span th:class="${'badge ' + (tp.GRANTABLE == 'YES' ? 'badge-yes' : 'badge-no')}" th:text="${tp.GRANTABLE}">NO</span></td>
+                <td>
+                  <form th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" th:action="@{/admin/users/{username}/revoke-obj-priv(username=${selectedUser.username})}" method="post" onsubmit="return confirm('Thu hoi quyen doi tuong nay?');">
+                    <input type="hidden" name="owner" th:value="${tp.OWNER}" />
+                    <input type="hidden" name="tableName" th:value="${tp.TABLE_NAME}" />
+                    <input type="hidden" name="privilege" th:value="${tp.PRIVILEGE}" />
+                    <button class="button danger" style="min-height:26px; padding:2px 8px; font-size:11px;" type="submit">Revoke</button>
+                  </form>
+                  <span th:if="${selectedUser.username == 'APP_DBA_ADMIN'}" style="color:#9aa2ad; font-size:11px;">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Column Privileges Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Column Privileges</div>
+          <button th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" class="button secondary" style="min-height:30px; padding:4px 10px; color:#171a1f;" type="button" data-open-modal="grantColPrivModal">+ Grant Column Privilege</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Owner</th>
+                <th>Table Name</th>
+                <th>Column</th>
+                <th>Privilege</th>
+                <th>Grantable</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${#lists.isEmpty(colPrivs)}">
+                <td colspan="6" class="empty-state">No column privileges granted to this user.</td>
+              </tr>
+              <tr th:each="cp : ${colPrivs}">
+                <td th:text="${cp.OWNER}">SYSTEM</td>
+                <td th:text="${cp.TABLE_NAME}">DEMO_TABLE</td>
+                <td th:text="${cp.COLUMN_NAME}">ID</td>
+                <td th:text="${cp.PRIVILEGE}">UPDATE</td>
+                <td><span th:class="${'badge ' + (cp.GRANTABLE == 'YES' ? 'badge-yes' : 'badge-no')}" th:text="${cp.GRANTABLE}">NO</span></td>
+                <td>
+                  <form th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" th:action="@{/admin/users/{username}/revoke-col-priv(username=${selectedUser.username})}" method="post" onsubmit="return confirm('Thu hoi quyen cot nay?');">
+                    <input type="hidden" name="owner" th:value="${cp.OWNER}" />
+                    <input type="hidden" name="tableName" th:value="${cp.TABLE_NAME}" />
+                    <input type="hidden" name="privilege" th:value="${cp.PRIVILEGE}" />
+                    <button class="button danger" style="min-height:26px; padding:2px 8px; font-size:11px;" type="submit">Revoke</button>
+                  </form>
+                  <span th:if="${selectedUser.username == 'APP_DBA_ADMIN'}" style="color:#9aa2ad; font-size:11px;">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="panel-legend alert">
+          <div>ⓘ <strong>Note</strong>: Oracle doesn't support WITH GRANT OPTION for column privileges. The grantee cannot grant this privilege to others.</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modals -->
+
+  <!-- Edit User Modal -->
+  <div class="modal" id="editUserModal" aria-hidden="true">
+    <div class="dialog">
+      <form action="/admin/users/update" method="post">
+        <div class="dialog-header">
+          <div class="dialog-title">Edit User</div>
+          <button class="dialog-close" type="button" data-close-modal>×</button>
+        </div>
+        <div class="dialog-body">
+          <div class="form-grid">
+            <div class="field">
+              <label for="editUsername">Username</label>
+              <input id="editUsername" name="username" th:value="${selectedUser.username}" readonly required />
+            </div>
+            <div class="field">
+              <label for="editNewPassword">New password</label>
+              <input id="editNewPassword" name="newPassword" type="password" placeholder="Leave blank to keep current" />
+            </div>
+            <div class="field">
+              <label for="editDefaultTablespace">Default tablespace</label>
+              <select id="editDefaultTablespace" name="defaultTablespace">
+                <option th:each="ts : ${permanentTablespaces}" th:value="${ts}" th:text="${ts}" th:selected="${ts == selectedUser.defaultTablespace}">TS_USERS</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="editTemporaryTablespace">Temporary tablespace</label>
+              <select id="editTemporaryTablespace" name="temporaryTablespace">
+                <option th:each="ts : ${temporaryTablespaces}" th:value="${ts}" th:text="${ts}" th:selected="${ts == selectedUser.temporaryTablespace}">TEMP</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="button secondary" type="button" data-close-modal>Cancel</button>
+          <button class="button primary" type="submit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Set Quota Modal -->
+  <div class="modal" id="setQuotaModal" aria-hidden="true">
+    <div class="dialog">
+      <form th:action="@{/admin/users/{username}/set-quota(username=${selectedUser.username})}" method="post">
+        <div class="dialog-header">
+          <div class="dialog-title">Set Tablespace Quota</div>
+          <button class="dialog-close" type="button" data-close-modal>×</button>
+        </div>
+        <div class="dialog-body">
+          <div class="form-grid single">
+            <div class="field">
+              <label for="quotaTablespace">Tablespace</label>
+              <select id="quotaTablespace" name="tablespace">
+                <option th:each="ts : ${permanentTablespaces}" th:value="${ts}" th:text="${ts}">TS_USERS</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="quotaVal">Quota Value</label>
+              <select id="quotaVal" name="quota">
+                <option value="UNLIMITED" selected>UNLIMITED</option>
+                <option value="10M">10 MB</option>
+                <option value="50M">50 MB</option>
+                <option value="100M">100 MB</option>
+                <option value="500M">500 MB</option>
+                <option value="1G">1 GB</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="button secondary" type="button" data-close-modal>Cancel</button>
+          <button class="button primary" type="submit">Set Quota</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Grant Role Modal -->
+  <div class="modal" id="grantRoleModal" aria-hidden="true">
+    <div class="dialog">
+      <form th:action="@{/admin/users/{username}/grant-role(username=${selectedUser.username})}" method="post">
+        <div class="dialog-header">
+          <div class="dialog-title">Grant Role to User</div>
+          <button class="dialog-close" type="button" data-close-modal>×</button>
+        </div>
+        <div class="dialog-body">
+          <div class="form-grid single">
+            <div class="field">
+              <label for="roleToGrant">Role</label>
+              <select id="roleToGrant" name="roleToGrant" required>
+                <option value="">-- Select Role --</option>
+                <option th:each="r : ${roles}" th:value="${r}" th:text="${r}">APP_ROLE_USER</option>
+              </select>
+            </div>
+            <div class="field-checkbox">
+              <input type="checkbox" id="roleAdminOpt" name="adminOption" value="true" />
+              <label for="roleAdminOpt">WITH ADMIN OPTION</label>
+            </div>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="button secondary" type="button" data-close-modal>Cancel</button>
+          <button class="button primary" type="submit">Grant Role</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Grant System Privilege Modal -->
+  <div class="modal" id="grantSysPrivModal" aria-hidden="true">
+    <div class="dialog">
+      <form th:action="@{/admin/users/{username}/grant-sys-priv(username=${selectedUser.username})}" method="post">
+        <div class="dialog-header">
+          <div class="dialog-title">Grant System Privilege</div>
+          <button class="dialog-close" type="button" data-close-modal>×</button>
+        </div>
+        <div class="dialog-body">
+          <div class="form-grid single">
+            <div class="field">
+              <label for="sysPriv">System Privilege</label>
+              <select id="sysPriv" name="privilege" required>
+                <optgroup label="Session">
+                  <option value="CREATE SESSION">CREATE SESSION</option>
+                </optgroup>
+                <optgroup label="Profile">
+                  <option value="CREATE PROFILE">CREATE PROFILE</option>
+                  <option value="ALTER PROFILE">ALTER PROFILE</option>
+                  <option value="DROP PROFILE">DROP PROFILE</option>
+                </optgroup>
+                <optgroup label="Role">
+                  <option value="CREATE ROLE">CREATE ROLE</option>
+                  <option value="ALTER ANY ROLE">ALTER ANY ROLE</option>
+                  <option value="DROP ANY ROLE">DROP ANY ROLE</option>
+                  <option value="GRANT ANY ROLE">GRANT ANY ROLE</option>
+                </optgroup>
+                <optgroup label="User">
+                  <option value="CREATE USER">CREATE USER</option>
+                  <option value="ALTER USER">ALTER USER</option>
+                  <option value="DROP USER">DROP USER</option>
+                </optgroup>
+                <optgroup label="Table">
+                  <option value="CREATE TABLE">CREATE TABLE</option>
+                  <option value="CREATE ANY TABLE">CREATE ANY TABLE</option>
+                  <option value="ALTER ANY TABLE">ALTER ANY TABLE</option>
+                  <option value="DROP ANY TABLE">DROP ANY TABLE</option>
+                  <option value="SELECT ANY TABLE">SELECT ANY TABLE</option>
+                  <option value="INSERT ANY TABLE">INSERT ANY TABLE</option>
+                  <option value="UPDATE ANY TABLE">UPDATE ANY TABLE</option>
+                  <option value="DELETE ANY TABLE">DELETE ANY TABLE</option>
+                </optgroup>
+                <optgroup label="View / Procedure / Trigger / Sequence">
+                  <option value="CREATE VIEW">CREATE VIEW</option>
+                  <option value="CREATE PROCEDURE">CREATE PROCEDURE</option>
+                  <option value="CREATE TRIGGER">CREATE TRIGGER</option>
+                  <option value="CREATE SEQUENCE">CREATE SEQUENCE</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="field-checkbox">
+              <input type="checkbox" id="sysAdminOpt" name="adminOption" value="true" />
+              <label for="sysAdminOpt">WITH ADMIN OPTION</label>
+            </div>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="button secondary" type="button" data-close-modal>Cancel</button>
+          <button class="button primary" type="submit">Grant Privilege</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Grant Object Privilege Modal -->
+  <div class="modal" id="grantObjPrivModal" aria-hidden="true">
+    <div class="dialog">
+      <form th:action="@{/admin/users/{username}/grant-obj-priv(username=${selectedUser.username})}" method="post">
+        <div class="dialog-header">
+          <div class="dialog-title" style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #555;">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            Grant Object Privilege
+          </div>
+          <button class="dialog-close" type="button" data-close-modal>×</button>
+        </div>
+        <div class="dialog-body">
+          <div class="form-grid">
+            <div class="field">
+              <label for="objOwner">Owner (Schema)</label>
+              <select id="objOwner" name="owner" required>
+                <option value="">-- Select Schema --</option>
+                <option th:each="s : ${allSchemas}" th:value="${s}" th:text="${s}">SYSTEM</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="objTable">Table/Object Name</label>
+              <select id="objTable" name="tableName" required>
+                <option value="">-- Select Schema first --</option>
+              </select>
+            </div>
+            <div class="field" style="grid-column: span 2; margin-bottom: 0;">
+              <label>Privileges</label>
+              <div id="objPrivsList" class="columns-container" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 10px 12px; min-height: 50px; background: #fff; display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto;">
+                <div style="color: #6b7280; font-size: 13px;">Please select Table/Object first.</div>
+              </div>
+            </div>
+            <div class="field-checkbox" style="grid-column: span 2; margin-top: 5px;">
+              <input type="checkbox" id="objGrantOpt" name="grantOption" value="true" />
+              <label for="objGrantOpt">WITH GRANT OPTION</label>
+            </div>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="button secondary" type="button" data-close-modal>Cancel</button>
+          <button class="button primary" type="submit">Grant Privilege</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Grant Column Privilege Modal -->
+  <div class="modal" id="grantColPrivModal" aria-hidden="true">
+    <div class="dialog" style="width: min(520px, 100%);">
+      <form th:action="@{/admin/users/{username}/grant-col-priv(username=${selectedUser.username})}" method="post">
+        <div class="dialog-header">
+          <div class="dialog-title" style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #555;">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            Grant Column Privilege
+          </div>
+          <button class="dialog-close" type="button" data-close-modal>×</button>
+        </div>
+        <div class="dialog-body" style="padding: 20px;">
+          <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 16px; margin-bottom: 8px;">
+            <div class="field" style="margin-bottom: 0;">
+              <label style="font-weight: 500; font-size: 13px; color: #4b5563;">Privilege</label>
+              <select name="privilege" required style="border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 12px; height: 38px;">
+                <option value="UPDATE">UPDATE</option>
+                <option value="INSERT">INSERT</option>
+              </select>
+            </div>
+            <div class="field" style="margin-bottom: 0;">
+              <label style="font-weight: 500; font-size: 13px; color: #4b5563;">Table</label>
+              <select name="table" id="colTableSelectCombined" required style="border: 1px solid #d1d5db; border-radius: 6px; padding: 6px 12px; height: 38px;">
+                <option value="">-- Loading... --</option>
+              </select>
+            </div>
+          </div>
+          
+          <div style="font-size: 12px; color: #6b7280; margin-bottom: 16px; line-height: 1.4; display: flex; gap: 6px; align-items: flex-start; margin-top: 6px;">
+            <span style="font-size: 14px; line-height: 12px; color: #9ca3af;">ⓘ</span>
+            <span>Oracle only supports INSERT, UPDATE for column-level privileges. SELECT must be granted on the whole table.</span>
+          </div>
+
+          <div class="field" style="margin-bottom: 0;">
+            <label style="font-weight: 500; font-size: 13px; color: #4b5563; margin-bottom: 6px;">Columns</label>
+            <div id="colColumnsList" class="columns-container" style="border: 1px solid #d1d5db; border-radius: 6px; padding: 10px 12px; max-height: 220px; overflow-y: auto; background: #fff; display: flex; flex-direction: column; gap: 4px;">
+              <div style="color: #6b7280; font-size: 13px;">Please select Table first.</div>
+            </div>
+          </div>
+
+          <div class="warning-banner" style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 10px 12px; margin-top: 16px; display: flex; gap: 8px; align-items: flex-start;">
+            <span style="color: #d97706; font-weight: bold; font-size: 14px; line-height: 14px;">⚠</span>
+            <span style="color: #b45309; font-size: 12px; line-height: 1.4;"><strong>Note:</strong> WITH GRANT OPTION is not available for column privileges (Oracle limitation).</span>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="button secondary" type="button" data-close-modal>Cancel</button>
+          <button class="button primary" type="submit">Grant</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    const dbTables = /*[[${allTables}]]*/ [];
+    const dbColumns = /*[[${allColumns}]]*/ [];
+    /*]]>*/
+
+    const openButtons = document.querySelectorAll("[data-open-modal]");
+    const closeButtons = document.querySelectorAll("[data-close-modal]");
+    const modals = document.querySelectorAll(".modal");
+
+    openButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const modal = document.getElementById(button.dataset.openModal);
+        if (modal) {
+          modal.classList.add("open");
+          modal.setAttribute("aria-hidden", "false");
+        }
+      });
+    });
+
+    closeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const modal = button.closest(".modal");
+        if (modal) {
+          modal.classList.remove("open");
+          modal.setAttribute("aria-hidden", "true");
+        }
+      });
+    });
+
+    modals.forEach((modal) => {
+      modal.addEventListener("click", (event) => {
+        if (event.target === modal) {
+          modal.classList.remove("open");
+          modal.setAttribute("aria-hidden", "true");
+        }
+      });
+    });
+
+    // Combo box select elements
+    async function loadTables(owner, targetSelectId) {
+      const select = document.getElementById(targetSelectId);
+      select.innerHTML = '<option value="">-- Loading... --</option>';
+      if (!owner) {
+        select.innerHTML = '<option value="">-- Select Schema first --</option>';
+        return;
+      }
+      try {
+        const res = await fetch('/admin/api/tables?owner=' + encodeURIComponent(owner));
+        const tables = await res.json();
+        select.innerHTML = '<option value="">-- Select Table/Object --</option>';
+        tables.forEach(t => {
+          const option = document.createElement('option');
+          option.value = t;
+          option.textContent = t;
+          select.appendChild(option);
+        });
+      } catch (e) {
+        select.innerHTML = '<option value="">-- Error loading data --</option>';
+      }
+    }
+
+    async function loadAllTables() {
+      const select = document.getElementById('colTableSelectCombined');
+      if (!select) return;
+      select.innerHTML = '<option value="">-- Loading... --</option>';
+      try {
+        const res = await fetch('/admin/api/all-tables');
+        const tables = await res.json();
+        select.innerHTML = '<option value="">-- Select Table --</option>';
+        tables.forEach(t => {
+          const option = document.createElement('option');
+          option.value = t;
+          option.textContent = t;
+          select.appendChild(option);
+        });
+      } catch (e) {
+        select.innerHTML = '<option value="">-- Error loading data --</option>';
+      }
+    }
+
+    const objOwnerSelect = document.getElementById("objOwner");
+    if (objOwnerSelect) {
+      objOwnerSelect.addEventListener('change', (e) => {
+        loadTables(e.target.value, 'objTable');
+        document.getElementById('objPrivsList').innerHTML = '<div style="color: #6b7280; font-size: 13px;">Please select Table/Object first.</div>';
+      });
+    }
+
+    const objTableSelect = document.getElementById("objTable");
+    if (objTableSelect) {
+      objTableSelect.addEventListener('change', (e) => {
+        const selectedValue = e.target.value;
+        const privsContainer = document.getElementById('objPrivsList');
+        privsContainer.innerHTML = '';
+        
+        if (!selectedValue) {
+          privsContainer.innerHTML = '<div style="color: #6b7280; font-size: 13px;">Please select Table/Object first.</div>';
+          return;
+        }
+        
+        const typeMatch = selectedValue.match(/\(([^)]+)\)/);
+        const type = typeMatch ? typeMatch[1] : 'TABLE';
+        
+        let privileges = [];
+        if (type === 'TABLE' || type === 'VIEW') {
+          privileges = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'];
+        } else if (type === 'PROCEDURE' || type === 'FUNCTION' || type === 'PACKAGE') {
+          privileges = ['EXECUTE'];
+        } else if (type === 'SEQUENCE') {
+          privileges = ['SELECT', 'ALTER'];
+        } else {
+          privileges = ['SELECT'];
+        }
+        
+        privileges.forEach(p => {
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'column-item';
+          itemDiv.style.display = 'flex';
+          itemDiv.style.alignItems = 'center';
+          itemDiv.style.gap = '8px';
+          itemDiv.style.padding = '4px 0';
+          
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.name = 'privilege';
+          checkbox.value = p;
+          checkbox.id = 'obj_priv_' + p;
+          checkbox.style.cursor = 'pointer';
+          
+          const label = document.createElement('label');
+          label.htmlFor = 'obj_priv_' + p;
+          label.textContent = p;
+          label.style.cursor = 'pointer';
+          label.style.fontWeight = '500';
+          label.style.fontSize = '13px';
+          label.style.color = '#101214';
+          
+          itemDiv.appendChild(checkbox);
+          itemDiv.appendChild(label);
+          privsContainer.appendChild(itemDiv);
+        });
+      });
+    }
+
+    const colTableSelectCombined = document.getElementById('colTableSelectCombined');
+    if (colTableSelectCombined) {
+      colTableSelectCombined.addEventListener('change', async (e) => {
+        const combinedTable = e.target.value;
+        const columnsListContainer = document.getElementById('colColumnsList');
+        columnsListContainer.innerHTML = '<div style="color: #6b7280; font-size: 13px;">Loading columns list...</div>';
+        
+        if (!combinedTable) {
+          columnsListContainer.innerHTML = '<div style="color: #6b7280; font-size: 13px;">Please select Table first.</div>';
+          return;
+        }
+        
+        const parts = combinedTable.split('.');
+        const owner = parts[0];
+        const tableName = parts[1];
+        
+        try {
+          const res = await fetch('/admin/api/columns?owner=' + encodeURIComponent(owner) + '&tableName=' + encodeURIComponent(tableName));
+          const columns = await res.json();
+          
+          if (columns.length === 0) {
+            columnsListContainer.innerHTML = '<div style="color: #6b7280; font-size: 13px;">No columns found.</div>';
+            return;
+          }
+          
+          columnsListContainer.innerHTML = '';
+          columns.forEach(c => {
+            const cleanColName = c.split(' ')[0];
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'column-item';
+            itemDiv.style.display = 'flex';
+            itemDiv.style.alignItems = 'center';
+            itemDiv.style.gap = '8px';
+            itemDiv.style.padding = '4px 0';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = 'columnName';
+            checkbox.value = cleanColName;
+            checkbox.id = 'col_' + cleanColName;
+            checkbox.style.cursor = 'pointer';
+            
+            const label = document.createElement('label');
+            label.htmlFor = 'col_' + cleanColName;
+            label.textContent = c;
+            label.style.cursor = 'pointer';
+            label.style.fontWeight = '500';
+            label.style.fontSize = '13px';
+            label.style.color = '#101214';
+            
+            itemDiv.appendChild(checkbox);
+            itemDiv.appendChild(label);
+            columnsListContainer.appendChild(itemDiv);
+          });
+        } catch (err) {
+          columnsListContainer.innerHTML = '<div style="color: #ef4444; font-size: 13px;">Error loading columns list.</div>';
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadAllTables();
+    });
+  </script>
+</body>
+
+</html>

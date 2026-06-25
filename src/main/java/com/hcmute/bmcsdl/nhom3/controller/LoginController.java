@@ -11,7 +11,7 @@ import java.sql.*;
 @Controller
 public class LoginController {
 
-    @GetMapping("/")
+    @GetMapping({"/", "/login"})
     public String loginPage() {
         return "login";
     }

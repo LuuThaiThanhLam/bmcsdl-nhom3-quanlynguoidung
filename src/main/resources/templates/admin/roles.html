@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Role Management - Oracle DBA</title>
+  <style>
+    /* CSS included directly to match existing dashboard style */
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #d8dbe0; color: #101214; font-family: "Segoe UI", Tahoma, Arial, sans-serif; font-size: 14px; }
+    button, input, select { font: inherit; }
+    .app-shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar { background: #202327; border-right: 1px solid #111315; color: #d7dbe0; display: flex; flex-direction: column; min-width: 0; position: sticky; top: 0; height: 100vh; }
+    .brand { align-items: center; border-bottom: 1px solid #34383e; display: flex; gap: 10px; height: 64px; padding: 0 18px; }
+    .brand-mark { align-items: center; background: #111315; border: 1px solid #454a51; border-radius: 4px; display: inline-flex; height: 32px; justify-content: center; width: 32px; font-weight: 700; font-size: 13px; }
+    .brand-title { font-size: 16px; font-weight: 700; line-height: 1.1; }
+    .brand-subtitle { color: #9aa2ad; font-size: 11px; margin-top: 2px; }
+    .nav { padding: 12px 8px; }
+    .nav-item { align-items: center; border: 1px solid transparent; border-radius: 4px; color: #c8cdd4; display: flex; gap: 10px; min-height: 38px; padding: 8px 10px; text-decoration: none; }
+    .nav-item:hover { background: #2c3036; border-color: #3b4047; }
+    .nav-item.active { background: #3b3f46; border-color: #565c65; color: #ffffff; }
+    .nav-icon { align-items: center; color: #b6bdc7; display: inline-flex; font-size: 15px; justify-content: center; width: 20px; }
+    .sidebar-footer { border-top: 1px solid #34383e; margin-top: auto; padding: 14px 16px; }
+    .session-user { color: #bfc5ce; font-size: 12px; margin-bottom: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .logout-link { align-items: center; background: #151719; border: 1px solid #3e434a; border-radius: 4px; color: #e5e7eb; display: flex; justify-content: center; min-height: 34px; text-decoration: none; } .logout-link:hover { background: #1e2124; }
+    .main { min-width: 0; padding: 22px; }
+    .topbar, .panel { background: #f2f3f5; border: 1px solid #c8ccd1; border-radius: 4px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+    .topbar { align-items: center; display: flex; gap: 16px; justify-content: space-between; margin-bottom: 18px; min-height: 76px; padding: 16px 18px; }
+    .page-title { align-items: center; display: flex; gap: 12px; min-width: 0; }
+    .page-icon { align-items: center; background: #2e333a; border-radius: 4px; color: #ffffff; display: inline-flex; height: 38px; justify-content: center; width: 38px; }
+    h1 { color: #171a1f; font-size: 22px; line-height: 1.15; margin: 0; }
+    .subtitle { color: #666d76; font-size: 13px; margin-top: 3px; }
+    .button { align-items: center; border: 1px solid transparent; border-radius: 4px; cursor: pointer; display: inline-flex; gap: 7px; justify-content: center; min-height: 34px; padding: 7px 12px; text-decoration: none; white-space: nowrap; }
+    .button.primary { background: #2c65c8; border-color: #1f55b0; color: #ffffff; }
+    .button.secondary { background: #e7e9ed; border-color: #babfc7; color: #171a1f; }
+    .button.danger { background: #b93442; border-color: #9d2633; color: #ffffff; }
+    .button.warning { background: #c98a16; border-color: #a9700e; color: #ffffff; }
+    .button.icon { height: 30px; min-height: 30px; padding: 0; width: 32px; }
+    .message { border-radius: 4px; margin-bottom: 14px; padding: 10px 12px; }
+    .message.success { background: #e3f3e8; border: 1px solid #9fcbaa; color: #1f5f2e; }
+    .message.error { background: #f7e3e5; border: 1px solid #d6949c; color: #7e1f2a; }
+    .panel-header { align-items: center; background: #2d3239; border-bottom: 1px solid #171a1f; color: #ffffff; display: flex; gap: 12px; justify-content: space-between; min-height: 48px; padding: 9px 12px; border-top-left-radius: 3px; border-top-right-radius: 3px; }
+    .panel-title { font-weight: 700; display: flex; align-items: center; gap: 8px;}
+    .panel-tools { align-items: center; display: flex; gap: 8px; }
+    .search-input { background: #ffffff; border: 1px solid #aeb4bd; border-radius: 4px; color: #101214; height: 32px; min-width: 260px; padding: 6px 10px; }
+    .table-wrap { overflow: auto; background: #fff; }
+    table { border-collapse: collapse; min-width: 980px; width: 100%; }
+    th, td { border-bottom: 1px solid #d6d9dd; padding: 10px 12px; text-align: left; vertical-align: middle; white-space: nowrap; }
+    th { background: #f7f8f9; color: #23272d; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+    tbody tr:hover { background: #eceff3; }
+    .role-name { color: #14171b; font-weight: 700; text-decoration: none; }
+    .badge { background: #7f8c8d; color: #fff; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight: bold; }
+    .badge-yes { background: #27ae60; }
+    .badge-no { background: #7f8c8d; }
+    .actions { display: flex; gap: 5px; }
+    .empty-state { color: #6b727c; padding: 34px 20px; text-align: center; }
+    .modal { align-items: center; background: rgba(0, 0, 0, 0.52); display: none; inset: 0; justify-content: center; padding: 20px; position: fixed; z-index: 20; }
+    .modal.open { display: flex; }
+    .dialog { background: #f1f2f4; border: 1px solid #8e959f; border-radius: 4px; box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35); max-height: min(720px, 92vh); overflow: auto; width: min(500px, 100%); }
+    .dialog-header { align-items: center; background: #ffffff; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; min-height: 44px; padding: 10px 12px; }
+    .dialog-title { font-weight: 700; font-size: 16px;}
+    .dialog-body { padding: 14px; background: #fff; }
+    .field { display: grid; gap: 5px; margin-bottom: 14px; }
+    .field label { color: #3d444d; font-size: 12px; font-weight: 600; }
+    .field input, .field select { background: #ffffff; border: 1px solid #aeb4bd; border-radius: 4px; color: #101214; min-height: 32px; padding: 6px 8px; width: 100%; }
+    .dialog-footer { align-items: center; border-top: 1px solid #d0d4da; display: flex; gap: 8px; justify-content: flex-end; padding: 12px 14px; background: #fff;}
+    .close-btn { background: none; border: none; font-size: 18px; cursor: pointer; color: #666; }
+    .field input.input-error { border-color: #dc3545 !important; box-shadow: 0 0 0 2px rgba(220,53,69,0.15); }
+    .field-error { color: #dc3545; font-size: 11px; margin-top: 3px; display: none; font-weight: 600; }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">DB</span>
+        <div>
+          <div class="brand-title">Oracle DBA</div>
+          <div class="brand-subtitle">Administration Console</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a class="nav-item" href="/admin/dashboard"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span><span>Dashboard</span></a>
+        <a class="nav-item" href="/admin/users"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span>User Management</span></a>
+        <a class="nav-item active" href="/admin/roles"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span><span>Role Management</span></a>
+        <a class="nav-item" href="/admin/profiles"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span>Profile Management</span></a>
+        <a class="nav-item" href="/admin/audit-logs"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></span><span>Audit Logs</span></a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="session-user">Signed in: <strong th:text="${session.username}">APP_DBA_ADMIN</strong></div>
+        <a class="logout-link" href="/logout">Logout</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="topbar">
+        <div class="page-title">
+          <span class="page-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
+          <div>
+            <h1>Role Management</h1>
+            <div class="subtitle">Manage Oracle Database Roles</div>
+          </div>
+        </div>
+        <button class="button primary" type="button" onclick="document.getElementById('createRoleModal').classList.add('open')">+ Create Role</button>
+      </section>
+
+      <div class="message success" th:if="${success}" th:text="${success}"></div>
+      <div class="message error" th:if="${error}">
+        <span th:text="${error}"></span> <strong th:if="${errorCode}" th:text="${errorCode}"></strong>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">All Roles</div>
+          <div class="panel-tools">
+            <input class="search-input" id="roleSearch" type="search" placeholder="Search roles..." onkeyup="filterRoles()" />
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="rolesTable">
+            <thead>
+              <tr>
+                <th>Role Name</th>
+                <th>Password Required</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${#lists.isEmpty(roles)}">
+                <td colspan="4"><div class="empty-state">No roles found.</div></td>
+              </tr>
+              <tr th:each="role : ${roles}">
+                <td><a class="role-name" th:href="@{/admin/roles/{name}(name=${role.role})}" th:text="${role.role}">APP_ROLE</a></td>
+                <td><span th:class="${'badge ' + (role.passwordRequired == 'YES' ? 'badge-yes' : 'badge-no')}" th:text="${role.passwordRequired}">NO</span></td>
+                <td>
+                  <div class="actions">
+                    <a class="button icon secondary" title="View / Edit" th:href="@{/admin/roles/{name}(name=${role.role})}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    </a>
+                    <form th:action="@{/admin/roles/{name}/delete(name=${role.role})}" method="post" onsubmit="return confirm('Delete this role?');" style="display:inline;">
+                      <button class="button icon danger" type="submit" title="Delete Role">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal" id="createRoleModal">
+    <div class="dialog">
+      <form action="/admin/roles/create" method="post">
+        <div class="dialog-header">
+          <div class="dialog-title">Create Role</div>
+          <button class="close-btn" type="button" onclick="document.getElementById('createRoleModal').classList.remove('open')">×</button>
+        </div>
+        <div class="dialog-body">
+          <div class="field">
+            <label>Role Name</label>
+            <input id="createRoleNameInput" name="role" type="text" required placeholder="APP_ROLE_..." />
+            <span class="field-error" id="roleNameError">⚠ Tên role phải bắt đầu bằng <strong>APP_ROLE_</strong> (ví dụ: APP_ROLE_USER)</span>
+          </div>
+          
+          <div class="field" style="margin-top: 10px;">
+            <label>Authentication Type</label>
+            <div style="display: flex; gap: 15px; margin-top: 4px;">
+              <label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <input type="radio" name="authType" value="NONE" checked onchange="togglePasswordField(false)" style="width: auto; min-height: 0; padding: 0; margin: 0;" /> No Password
+              </label>
+              <label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <input type="radio" name="authType" value="PASSWORD" onchange="togglePasswordField(true)" style="width: auto; min-height: 0; padding: 0; margin: 0;" /> Require Password
+              </label>
+            </div>
+          </div>
+
+          <div class="field" id="passwordFieldContainer" style="display: none; position: relative; margin-top: 10px;">
+            <label>Password</label>
+            <div style="display: flex; position: relative;">
+              <input name="passwordRequired" id="rolePasswordInput" type="password" placeholder="Enter password..." style="padding-right: 50px;" />
+              <button type="button" onclick="togglePasswordVisibility('rolePasswordInput', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 11px; font-weight: 700; color: #5d646e; text-transform: uppercase;">SHOW</button>
+            </div>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="button secondary" type="button" onclick="document.getElementById('createRoleModal').classList.remove('open')">Cancel</button>
+          <button class="button primary" type="submit">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function togglePasswordField(show) {
+      const container = document.getElementById('passwordFieldContainer');
+      const input = document.getElementById('rolePasswordInput');
+      if (show) {
+        container.style.display = 'block';
+        input.required = true;
+      } else {
+        container.style.display = 'none';
+        input.required = false;
+        input.value = '';
+      }
+    }
+
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = 'HIDE';
+        btn.style.color = '#2c65c8';
+      } else {
+        input.type = 'password';
+        btn.innerHTML = 'SHOW';
+        btn.style.color = '#5d646e';
+      }
+    }
+
+    function filterRoles() {
+      const input = document.getElementById('roleSearch').value.toUpperCase();
+      const trs = document.getElementById('rolesTable').getElementsByTagName('tr');
+      for (let i = 1; i < trs.length; i++) {
+        let td = trs[i].getElementsByTagName('td')[0];
+        if (td) {
+          trs[i].style.display = td.textContent.toUpperCase().indexOf(input) > -1 ? "" : "none";
+        }
+      }
+    }
+
+    // Real-time validation cho Role Name
+    (function () {
+      const roleInput = document.getElementById('createRoleNameInput');
+      const roleError = document.getElementById('roleNameError');
+      const createBtn = document.querySelector('#createRoleModal button[type="submit"]');
+
+      function validateRoleName() {
+        const val = roleInput.value.trim().toUpperCase();
+        const valid = val.startsWith('APP_ROLE_') && val.length > 9;
+        if (val.length === 0) {
+          roleInput.classList.remove('input-error');
+          roleError.style.display = 'none';
+          createBtn.disabled = false;
+        } else if (!valid) {
+          roleInput.classList.add('input-error');
+          roleError.style.display = 'block';
+          createBtn.disabled = true;
+        } else {
+          roleInput.classList.remove('input-error');
+          roleError.style.display = 'none';
+          createBtn.disabled = false;
+        }
+      }
+
+      roleInput.addEventListener('input', validateRoleName);
+      roleInput.addEventListener('blur', function () {
+        if (this.value) this.value = this.value.toUpperCase();
+      });
+    })();
+  </script>
+</body>
+</html>

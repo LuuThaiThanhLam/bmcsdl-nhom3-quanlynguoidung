@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audit Logs - Oracle DBA</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #d8dbe0; color: #101214; font-family: "Segoe UI", Tahoma, Arial, sans-serif; font-size: 14px; }
+    button, input, select { font: inherit; }
+    .app-shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar { background: #202327; border-right: 1px solid #111315; color: #d7dbe0; display: flex; flex-direction: column; min-width: 0; position: sticky; top: 0; height: 100vh; }
+    .brand { align-items: center; border-bottom: 1px solid #34383e; display: flex; gap: 10px; height: 64px; padding: 0 18px; }
+    .brand-mark { align-items: center; background: #111315; border: 1px solid #454a51; border-radius: 4px; display: inline-flex; height: 32px; justify-content: center; width: 32px; font-weight: 700; font-size: 13px; }
+    .brand-title { font-size: 16px; font-weight: 700; line-height: 1.1; }
+    .brand-subtitle { color: #9aa2ad; font-size: 11px; margin-top: 2px; }
+    .nav { padding: 12px 8px; }
+    .nav-item { align-items: center; border: 1px solid transparent; border-radius: 4px; color: #c8cdd4; display: flex; gap: 10px; min-height: 38px; padding: 8px 10px; text-decoration: none; }
+    .nav-item:hover { background: #2c3036; border-color: #3b4047; }
+    .nav-item.active { background: #3b3f46; border-color: #565c65; color: #ffffff; }
+    .nav-icon { align-items: center; color: #b6bdc7; display: inline-flex; font-size: 15px; justify-content: center; width: 20px; }
+    .sidebar-footer { border-top: 1px solid #34383e; margin-top: auto; padding: 14px 16px; }
+    .session-user { color: #bfc5ce; font-size: 12px; margin-bottom: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .logout-link { align-items: center; background: #151719; border: 1px solid #3e434a; border-radius: 4px; color: #e5e7eb; display: flex; justify-content: center; min-height: 34px; text-decoration: none; }
+    .logout-link:hover { background: #1e2124; }
+
+    /* ── Main ── */
+    .main { min-width: 0; padding: 22px; }
+    .topbar { background: #f2f3f5; border: 1px solid #c8ccd1; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,.12); align-items: center; display: flex; gap: 16px; justify-content: space-between; margin-bottom: 18px; min-height: 76px; padding: 16px 18px; }
+    .page-title { align-items: center; display: flex; gap: 12px; min-width: 0; }
+    .page-icon { align-items: center; background: #2e333a; border-radius: 4px; color: #fff; display: inline-flex; height: 38px; justify-content: center; width: 38px; }
+    h1 { color: #171a1f; font-size: 22px; line-height: 1.15; margin: 0; }
+    .subtitle { color: #666d76; font-size: 13px; margin-top: 3px; }
+
+    /* ── Buttons ── */
+    .button { align-items: center; border: 1px solid transparent; border-radius: 4px; cursor: pointer; display: inline-flex; gap: 7px; justify-content: center; min-height: 34px; padding: 7px 12px; text-decoration: none; white-space: nowrap; }
+    .button.primary { background: #2c65c8; border-color: #1f55b0; color: #fff; }
+    .button.secondary { background: #e7e9ed; border-color: #babfc7; color: #171a1f; }
+
+    /* ── Messages ── */
+    .message { border-radius: 4px; margin-bottom: 14px; padding: 10px 12px; }
+    .message.success { background: #e3f3e8; border: 1px solid #9fcbaa; color: #1f5f2e; }
+    .message.error { background: #f7e3e5; border: 1px solid #d6949c; color: #7e1f2a; }
+
+    /* ── Tab strip ── */
+    .tab-strip { display: flex; gap: 0; margin-bottom: 18px; background: #f2f3f5; border: 1px solid #c8ccd1; border-radius: 4px; overflow: hidden; }
+    .tab-item { align-items: center; border-right: 1px solid #c8ccd1; color: #4a5260; cursor: pointer; display: flex; gap: 8px; min-height: 44px; padding: 10px 18px; text-decoration: none; font-weight: 600; font-size: 13px; transition: background 0.12s; }
+    .tab-item:last-child { border-right: none; }
+    .tab-item:hover { background: #e5e7eb; }
+    .tab-item.active { background: #2d3239; color: #fff; }
+
+    /* ── Filter bar ── */
+    .filter-bar { background: #f2f3f5; border: 1px solid #c8ccd1; border-radius: 4px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin-bottom: 18px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; }
+    .filter-label { color: #3d444d; font-size: 12px; font-weight: 600; }
+    .filter-select { background: #fff; border: 1px solid #aeb4bd; border-radius: 4px; color: #101214; height: 34px; min-width: 200px; padding: 5px 10px; }
+    .filter-actions { display: flex; gap: 8px; margin-top: auto; }
+
+    /* ── Panel ── */
+    .panel { background: #f2f3f5; border: 1px solid #c8ccd1; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+    .panel-header { align-items: center; background: #2d3239; border-bottom: 1px solid #171a1f; color: #fff; display: flex; gap: 12px; justify-content: space-between; min-height: 48px; padding: 9px 14px; border-top-left-radius: 3px; border-top-right-radius: 3px; }
+    .panel-title { font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .record-badge { background: #2c65c8; border-radius: 10px; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 9px; }
+
+    /* ── Table ── */
+    .table-wrap { overflow: auto; background: #fff; }
+    table { border-collapse: collapse; min-width: 1100px; width: 100%; }
+    th, td { border-bottom: 1px solid #d6d9dd; padding: 9px 12px; text-align: left; vertical-align: middle; }
+    th { background: #f7f8f9; color: #23272d; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+    tbody tr:hover { background: #eceff3; }
+    .ts-cell { color: #444; font-size: 12px; white-space: nowrap; }
+    .username-cell { font-weight: 700; color: #14171b; white-space: nowrap; }
+    .sql-cell { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #444; font-size: 12px; font-family: monospace; }
+    .obj-cell { color: #555; font-size: 12px; white-space: nowrap; }
+
+    /* ── Action badges ── */
+    .action-badge { border-radius: 3px; color: #fff; display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.4px; padding: 2px 7px; text-transform: uppercase; }
+    .ab-select    { background: #17a589; }
+    .ab-insert    { background: #2e86c1; }
+    .ab-update    { background: #d68910; }
+    .ab-delete    { background: #b03a2e; }
+    .ab-logon     { background: #1e8449; }
+    .ab-logoff    { background: #7d6608; }
+    .ab-create    { background: #8e44ad; }
+    .ab-alter     { background: #d68910; }
+    .ab-drop      { background: #c0392b; }
+    .ab-grant     { background: #27ae60; }
+    .ab-revoke    { background: #d35400; }
+    .ab-other     { background: #7f8c8d; }
+
+    /* ── Return code badge ── */
+    .rc-ok  { background: #1e8449; border-radius: 10px; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; }
+    .rc-err { background: #b03a2e; border-radius: 10px; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; }
+
+    .empty-state { color: #6b727c; padding: 34px 20px; text-align: center; }
+
+    /* ── Pagination ── */
+    .pagination { align-items: center; display: flex; gap: 6px; justify-content: center; padding: 14px 16px; background: #fff; border-top: 1px solid #e0e3e7; flex-wrap: wrap; }
+    .page-btn { align-items: center; background: #fff; border: 1px solid #babfc7; border-radius: 4px; color: #3d444d; cursor: pointer; display: inline-flex; height: 30px; justify-content: center; min-width: 30px; padding: 0 8px; text-decoration: none; font-size: 12px; font-weight: 600; }
+    .page-btn:hover { background: #e7e9ed; }
+    .page-btn.active { background: #2c65c8; border-color: #1f55b0; color: #fff; }
+    .page-btn.disabled { color: #aeb4bd; cursor: not-allowed; pointer-events: none; }
+    .page-info { color: #6b727c; font-size: 12px; margin: 0 8px; }
+
+    /* ── Filter input (date) ── */
+    .filter-input { background: #fff; border: 1px solid #aeb4bd; border-radius: 4px; color: #101214; height: 34px; padding: 5px 10px; }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">DB</span>
+        <div>
+          <div class="brand-title">Oracle DBA</div>
+          <div class="brand-subtitle">Administration Console</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-item" href="/admin/dashboard"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span><span>Dashboard</span></a>
+        <a class="nav-item" href="/admin/users"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span>User Management</span></a>
+        <a class="nav-item" href="/admin/roles"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span><span>Role Management</span></a>
+        <a class="nav-item" href="/admin/profiles"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span>Profile Management</span></a>
+        <a class="nav-item active" href="/admin/audit-logs"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></span><span>Audit Logs</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="session-user">Signed in: <strong th:text="${session.username}">APP_DBA_ADMIN</strong></div>
+        <a class="logout-link" href="/logout">Logout</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="topbar">
+        <div class="page-title">
+          <span class="page-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></span>
+          <div>
+            <h1>Audit Logs</h1>
+            <div class="subtitle">Monitor Oracle database audit records</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="message success" th:if="${success}" th:text="${success}"></div>
+      <div class="message error" th:if="${error}">
+        <span th:text="${error}"></span>
+        <span th:if="${errorCode}"> — </span>
+        <strong th:if="${errorCode}" th:text="${errorCode}"></strong>
+      </div>
+
+      <!-- Tab strip -->
+      <div class="tab-strip">
+        <a class="tab-item" th:classappend="${activeTab == 'unified'} ? ' active' : ''"
+           th:href="@{/admin/audit-logs(tab='unified',username=${selectedUsername},dateFrom=${selectedDateFrom},dateTo=${selectedDateTo},pageSize=${pageSize})}">
+          Unified Audit Trail
+        </a>
+        <a class="tab-item" th:classappend="${activeTab == 'fga'} ? ' active' : ''"
+           th:href="@{/admin/audit-logs(tab='fga',username=${selectedUsername},dateFrom=${selectedDateFrom},dateTo=${selectedDateTo},pageSize=${pageSize})}">
+          Fine-Grained Audit (FGA)
+        </a>
+      </div>
+
+      <!-- Filter bar -->
+      <form method="get" action="/admin/audit-logs" class="filter-bar">
+        <input type="hidden" name="tab" th:value="${activeTab}" />
+        <input type="hidden" name="page" value="1" />
+
+        <div class="filter-group">
+          <label class="filter-label">Filter by Username</label>
+          <select class="filter-select" name="username">
+            <option value="">-- All Users --</option>
+            <th:block th:if="${activeTab == 'unified'}">
+              <option th:each="u : ${auditUsernames}"
+                      th:value="${u}" th:text="${u}"
+                      th:selected="${u == selectedUsername}">APP_USER</option>
+            </th:block>
+            <th:block th:if="${activeTab == 'fga'}">
+              <option th:each="u : ${fgaUsernames}"
+                      th:value="${u}" th:text="${u}"
+                      th:selected="${u == selectedUsername}">APP_USER</option>
+            </th:block>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">From Date</label>
+          <input class="filter-input" type="date" name="dateFrom"
+                 th:value="${selectedDateFrom}" />
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">To Date</label>
+          <input class="filter-input" type="date" name="dateTo"
+                 th:value="${selectedDateTo}" />
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Rows per Page</label>
+          <select class="filter-select" name="pageSize" style="min-width:100px;">
+            <option value="20"  th:selected="${pageSize == 20}">20</option>
+            <option value="50"  th:selected="${pageSize == 50}">50</option>
+            <option value="100" th:selected="${pageSize == 100}">100</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button type="submit" class="button primary">Apply Filter</button>
+          <a class="button secondary" th:href="@{/admin/audit-logs(tab=${activeTab})}">Reset</a>
+        </div>
+      </form>
+
+      <!-- Results panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"
+               th:text="${activeTab == 'fga'} ? 'Fine-Grained Audit Records' : 'Unified Audit Records'">
+            Unified Audit Records
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <span class="record-badge" th:text="${totalCount} + ' total records'">0 records</span>
+            <span style="color:#aeb4bd; font-size:12px;"
+                  th:text="'Page ' + ${currentPage} + ' of ' + ${totalPages}">Page 1 of 1</span>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Username</th>
+                <th>OS User</th>
+                <th>Action</th>
+                <th>Object Name</th>
+                <th>Return Code</th>
+                <th>SQL Text</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:if="${#lists.isEmpty(auditLogs)}">
+                <td colspan="7">
+                  <div class="empty-state">No audit records found for the selected filter.</div>
+                </td>
+              </tr>
+              <tr th:each="log : ${auditLogs}">
+                <td class="ts-cell" th:text="${log.eventTimestamp}">-</td>
+                <td class="username-cell" th:text="${log.dbUsername}">APP_USER</td>
+                <td class="obj-cell" th:text="${log.osUsername != null ? log.osUsername : 'unknown'}">admin</td>
+                <td>
+                  <span th:with="act=${log.actionName != null ? log.actionName.toUpperCase() : ''}"
+                        th:class="${'action-badge ' +
+                          (act == 'SELECT'   ? 'ab-select'  :
+                          (act == 'INSERT'   ? 'ab-insert'  :
+                          (act == 'UPDATE'   ? 'ab-update'  :
+                          (act == 'DELETE'   ? 'ab-delete'  :
+                          (act == 'LOGON'    ? 'ab-logon'   :
+                          (act == 'LOGOFF'   ? 'ab-logoff'  :
+                          (act.contains('CREATE') ? 'ab-create' :
+                          (act.contains('ALTER')  ? 'ab-alter'  :
+                          (act.contains('DROP')   ? 'ab-drop'   :
+                          (act.contains('GRANT')  ? 'ab-grant'  :
+                          (act.contains('REVOKE') ? 'ab-revoke' : 'ab-other')))))))))))}">
+                    <span th:text="${log.actionName}">SELECT</span>
+                  </span>
+                </td>
+                <td class="obj-cell" th:text="${log.objectName}">N/A</td>
+                <td>
+                  <span th:class="${log.returnCode == '0' ? 'rc-ok' : 'rc-err'}"
+                        th:text="${log.returnCode}">0</span>
+                </td>
+                <td class="sql-cell" th:title="${log.sqlText}" th:text="${log.sqlText}">N/A</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination controls -->
+        <div class="pagination" th:if="${totalPages > 1}">
+          <!-- Prev button -->
+          <a class="page-btn" th:classappend="${currentPage <= 1} ? ' disabled' : ''"
+             th:href="@{/admin/audit-logs(tab=${activeTab},username=${selectedUsername},dateFrom=${selectedDateFrom},dateTo=${selectedDateTo},pageSize=${pageSize},page=${currentPage - 1})}">&#8249; Prev</a>
+
+          <!-- Page numbers: show up to 7 pages around current -->
+          <th:block th:each="i : ${#numbers.sequence(1, totalPages)}">
+            <a class="page-btn"
+               th:if="${i == 1 or i == totalPages or (i >= currentPage - 2 and i <= currentPage + 2)}"
+               th:classappend="${i == currentPage} ? ' active' : ''"
+               th:text="${i}"
+               th:href="@{/admin/audit-logs(tab=${activeTab},username=${selectedUsername},dateFrom=${selectedDateFrom},dateTo=${selectedDateTo},pageSize=${pageSize},page=${i})}">1</a>
+            <!-- Ellipsis -->
+            <span th:if="${(i == currentPage - 3 and i > 1) or (i == currentPage + 3 and i < totalPages)}"
+                  style="color:#aeb4bd; align-self:center;">…</span>
+          </th:block>
+
+          <!-- Next button -->
+          <a class="page-btn" th:classappend="${currentPage >= totalPages} ? ' disabled' : ''"
+             th:href="@{/admin/audit-logs(tab=${activeTab},username=${selectedUsername},dateFrom=${selectedDateFrom},dateTo=${selectedDateTo},pageSize=${pageSize},page=${currentPage + 1})}">Next &#8250;</a>
+
+          <span class="page-info" th:text="'Showing ' + ${#lists.size(auditLogs)} + ' of ' + ${totalCount} + ' records'">Showing 50 of 200 records</span>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+
+</html>
