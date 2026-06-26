@@ -66,6 +66,15 @@
             <optional>true</optional>
         </dependency>
 
+
+
+        <!-- Apache Commons CSV -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.10.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -11,16 +11,16 @@ import java.sql.*;
 @Controller
 public class LoginController {
 
-    @GetMapping({"/", "/login"})
+    @GetMapping({ "/", "/login" })
     public String loginPage() {
         return "login";
     }
 
     @PostMapping("/login")
     public String login(@RequestParam String username,
-                        @RequestParam String password,
-                        HttpSession session,
-                        Model model) {
+            @RequestParam String password,
+            HttpSession session,
+            Model model) {
         try {
             String user = username.toUpperCase().trim();
             DataSource ds = DatabaseConfig.createDataSource(user, password);
@@ -33,9 +33,12 @@ public class LoginController {
 
             String role = getUserRole(user, password);
             switch (role) {
-                case "ADMIN":   return "redirect:/admin/dashboard";
-                case "MANAGER": return "redirect:/manager/dashboard";
-                case "USER":    return "redirect:/user/profile";
+                case "ADMIN":
+                    return "redirect:/admin/dashboard";
+                case "MANAGER":
+                    return "redirect:/manager/dashboard";
+                case "USER":
+                    return "redirect:/user/profile";
                 default:
                     model.addAttribute("error", "Không có role phù hợp!");
                     return "login";
@@ -46,18 +49,23 @@ public class LoginController {
         }
     }
 
-        private String getUserRole(String username, String password) {
+    private String getUserRole(String username, String password) {
         String sql = "SELECT ROLE FROM SESSION_ROLES";
         try (Connection conn = DatabaseConfig.createDataSource(username, password).getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 String r = rs.getString("ROLE");
-                if ("APP_ROLE_DB_ADMIN".equals(r))     return "ADMIN";
-                if ("APP_ROLE_PROFILE_MGR".equals(r))  return "MANAGER";
-                if ("APP_ROLE_USER".equals(r))         return "USER";
+                if ("APP_ROLE_DB_ADMIN".equals(r))
+                    return "ADMIN";
+                if ("APP_ROLE_PROFILE_MGR".equals(r))
+                    return "MANAGER";
+                if ("APP_ROLE_USER".equals(r))
+                    return "USER";
             }
-        } catch (SQLException e) { return "UNKNOWN"; }
+        } catch (SQLException e) {
+            return "UNKNOWN";
+        }
         return "UNKNOWN";
     }
 }

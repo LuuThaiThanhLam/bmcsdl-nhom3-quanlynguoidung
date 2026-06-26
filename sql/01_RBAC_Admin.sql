@@ -241,6 +241,10 @@ GRANT SELECT ON SYS.DBA_OBJECTS    TO APP_DBA_ADMIN;
 GRANT SELECT ON SYS.DBA_TAB_PRIVS  TO APP_DBA_ADMIN;
 GRANT SELECT ON SYS.DBA_COL_PRIVS  TO APP_DBA_ADMIN;
 
+-- Cấp quyền thêm cho phần audit và kill session
+GRANT EXECUTE ON DBMS_AUDIT_MGMT TO APP_DBA_ADMIN;
+GRANT ALTER SYSTEM TO APP_DBA_ADMIN;
+
 PROMPT ========================================================================
 PROMPT PHASE 2 - CONNECT APP_TABLE: tao bang du lieu mau va view
 PROMPT ========================================================================
