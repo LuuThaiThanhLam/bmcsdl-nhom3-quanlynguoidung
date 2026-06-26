@@ -47,13 +47,13 @@ NEU OLS CHUA ENABLE
 SET SERVEROUTPUT ON;
 SET DEFINE ON;
 
-DEFINE SYS_CONN                 = "SYS/your_sys_password AS SYSDBA"
-DEFINE LBACSYS_CONN             = "LBACSYS/your_lbacsys_password"
-DEFINE APP_OLS_MGR_CONN         = "APP_OLS_MGR/123456"
-DEFINE APP_TABLE_CONN           = "APP_TABLE/123456"
-DEFINE APP_DBA_ADMIN_CONN       = "APP_DBA_ADMIN/123456"
-DEFINE APP_USER_1_CONN          = "APP_USER_1/123456"
-DEFINE APP_MANAGER_PROFILE_CONN = "APP_MANAGER_PROFILE/123456"
+DEFINE SYS_CONN                 = "SYS/123@//localhost:1521/FREEPDB1 AS SYSDBA"
+DEFINE LBACSYS_CONN             = "LBACSYS/lbacsys@//localhost:1521/FREEPDB1"
+DEFINE APP_OLS_MGR_CONN         = "APP_OLS_MGR/123456@//localhost:1521/FREEPDB1"
+DEFINE APP_TABLE_CONN           = "APP_TABLE/123456@//localhost:1521/FREEPDB1"
+DEFINE APP_DBA_ADMIN_CONN       = "APP_DBA_ADMIN/123456@//localhost:1521/FREEPDB1"
+DEFINE APP_USER_1_CONN          = "APP_USER_1/123456@//localhost:1521/FREEPDB1"
+DEFINE APP_MANAGER_PROFILE_CONN = "APP_MANAGER_PROFILE/123456@//localhost:1521/FREEPDB1"
 
 PROMPT ========================================================================
 PROMPT PHASE 1 - CONNECT SYS: kiem tra OLS va cap quyen goi package OLS
@@ -318,6 +318,17 @@ BEGIN
   SA_USER_ADMIN.SET_USER_LABELS(
     policy_name     => 'USER_PROFILE_OLS',
     user_name       => 'APP_USER_1',
+    max_read_label  => 'PUB::ALL',
+    max_write_label => 'PUB::ALL',
+    min_write_label => 'PUB',
+    def_label       => 'PUB::ALL',
+    row_label       => 'PUB::ALL'
+  );
+
+  -- User thuong APP_USER_3: cung cap nhan PUBLIC group ALL nhu APP_USER_1.
+  SA_USER_ADMIN.SET_USER_LABELS(
+    policy_name     => 'USER_PROFILE_OLS',
+    user_name       => 'APP_USER_3',
     max_read_label  => 'PUB::ALL',
     max_write_label => 'PUB::ALL',
     min_write_label => 'PUB',

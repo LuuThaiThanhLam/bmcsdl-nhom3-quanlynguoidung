@@ -17,7 +17,7 @@ Y TUONG BAO MAT VPD
   Chinh sach trong lab:
     - APP_TABLE, APP_DBA_ADMIN: xem/sua tat ca dong.
     - APP_MANAGER_PROFILE    : chi xem/sua/xoa ho so phong HR.
-    - APP_USER_1             : chi xem/sua ho so co USERNAME = SESSION_USER.
+    - APP_USER_1, APP_USER_3 : chi xem/sua ho so co USERNAME = SESSION_USER.
     - User khac              : khong thay dong nao.
 
   Vi du:
@@ -35,11 +35,12 @@ HUONG DAN CHAY
 SET SERVEROUTPUT ON;
 SET DEFINE ON;
 
-DEFINE SYS_CONN                 = "SYS/your_sys_password AS SYSDBA"
-DEFINE APP_TABLE_CONN           = "APP_TABLE/123456"
-DEFINE APP_DBA_ADMIN_CONN       = "APP_DBA_ADMIN/123456"
-DEFINE APP_USER_1_CONN          = "APP_USER_1/123456"
-DEFINE APP_MANAGER_PROFILE_CONN = "APP_MANAGER_PROFILE/123456"
+DEFINE SYS_CONN                  = "SYS/123@//localhost:1521/FREEPDB1 AS SYSDBA"
+DEFINE APP_DBA_ADMIN_CONN        = "APP_DBA_ADMIN/123456@//localhost:1521/FREEPDB1"
+DEFINE APP_TABLE_CONN            = "APP_TABLE/123456@//localhost:1521/FREEPDB1"
+DEFINE APP_USER_1_CONN           = "APP_USER_1/123456@//localhost:1521/FREEPDB1"
+DEFINE APP_USER_3_CONN           = "APP_USER_3/123456@//localhost:1521/FREEPDB1"
+DEFINE APP_MANAGER_PROFILE_CONN  = "APP_MANAGER_PROFILE/123456@//localhost:1521/FREEPDB1"
 
 PROMPT ========================================================================
 PROMPT PHASE 1 - CONNECT SYS: dam bao APP_TABLE co quyen DBMS_RLS truc tiep
@@ -135,7 +136,7 @@ BEGIN
   END IF;
 
   -- User thuong chi xem dung cac dong gan voi username cua chinh session.
-  IF v_username = 'APP_USER_1' THEN
+  IF v_username IN ('APP_USER_1', 'APP_USER_3') THEN
     RETURN 'USERNAME = SYS_CONTEXT(''USERENV'', ''SESSION_USER'')';
   END IF;
 
@@ -165,7 +166,7 @@ BEGIN
     RETURN 'DEPARTMENT = ''HR''';
   END IF;
 
-  IF v_username = 'APP_USER_1' THEN
+  IF v_username IN ('APP_USER_1', 'APP_USER_3') THEN
     RETURN 'USERNAME = SYS_CONTEXT(''USERENV'', ''SESSION_USER'')';
   END IF;
 
@@ -244,6 +245,32 @@ COMMIT;
 UPDATE APP_TABLE.USER_PROFILE
 SET EMAIL = 'hack.hr@company.com'
 WHERE USER_ID = 2;
+COMMIT;
+
+SELECT USER_ID, FULL_NAME, DEPARTMENT, USERNAME, EMAIL
+FROM APP_TABLE.USER_PROFILE
+ORDER BY USER_ID;
+
+PROMPT ========================================================================
+PROMPT PHASE 3B - DEMO VPD VOI APP_USER_3
+PROMPT ========================================================================
+CONNECT &APP_USER_3_CONN
+
+-- Ky vong: chi thay USER_ID 4 vi USERNAME = APP_USER_3 (du lieu mau file 01).
+SELECT USER_ID, FULL_NAME, DEPARTMENT, USERNAME, EMAIL
+FROM APP_TABLE.USER_PROFILE
+ORDER BY USER_ID;
+
+-- Ky vong: thanh cong vi USER_ID = 4 thuoc APP_USER_3.
+UPDATE APP_TABLE.USER_PROFILE
+SET EMAIL = 'app_user_3.updated@company.com'
+WHERE USER_ID = 4;
+COMMIT;
+
+-- Ky vong: 0 rows updated vi USER_ID = 1 thuoc APP_USER_1, bi VPD loc khoi APP_USER_3.
+UPDATE APP_TABLE.USER_PROFILE
+SET EMAIL = 'hack.user1@company.com'
+WHERE USER_ID = 1;
 COMMIT;
 
 SELECT USER_ID, FULL_NAME, DEPARTMENT, USERNAME, EMAIL

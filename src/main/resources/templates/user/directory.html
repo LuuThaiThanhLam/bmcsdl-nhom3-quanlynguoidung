@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Danh bạ nội bộ</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #d8dbe0; color: #101214;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif; font-size: 14px; }
+    a, button, input { font: inherit; }
+    .app-shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar { background: #202327; border-right: 1px solid #111315; color: #d7dbe0;
+      display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+    .brand { align-items: center; border-bottom: 1px solid #34383e; display: flex; gap: 10px; height: 64px; padding: 0 18px; }
+    .brand-mark { align-items: center; background: #111315; border: 1px solid #454a51; border-radius: 4px;
+      display: inline-flex; height: 32px; justify-content: center; width: 32px; font-weight: 700; font-size: 13px; }
+    .brand-title { font-size: 16px; font-weight: 700; line-height: 1.1; }
+    .brand-subtitle { color: #9aa2ad; font-size: 11px; margin-top: 2px; }
+    .nav { padding: 12px 8px; }
+    .nav-item { align-items: center; border: 1px solid transparent; border-radius: 4px; color: #c8cdd4;
+      display: flex; gap: 10px; min-height: 38px; padding: 8px 10px; text-decoration: none; }
+    .nav-item:hover { background: #2c3036; border-color: #3b4047; }
+    .nav-item.active { background: #3b3f46; border-color: #565c65; color: #fff; }
+    .sidebar-footer { border-top: 1px solid #34383e; margin-top: auto; padding: 14px 16px; }
+    .session-user { color: #bfc5ce; font-size: 12px; margin-bottom: 10px; }
+    .logout-link { align-items: center; background: #151719; border: 1px solid #3e434a; border-radius: 4px;
+      color: #e5e7eb; display: flex; justify-content: center; min-height: 34px; text-decoration: none; }
+    .logout-link:hover { background: #1e2124; }
+    .main { min-width: 0; padding: 24px; }
+    .topbar { background: #f2f3f5; border: 1px solid #c8ccd1; border-radius: 6px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.12); align-items: center; display: flex; gap: 16px;
+      justify-content: space-between; margin-bottom: 24px; min-height: 76px; padding: 16px 20px; }
+    .page-title { align-items: center; display: flex; gap: 14px; }
+    .page-icon { align-items: center; background: #2e333a; border-radius: 6px; color: #fff;
+      display: inline-flex; height: 40px; justify-content: center; width: 40px; font-size: 18px; }
+    h1 { color: #171a1f; font-size: 22px; line-height: 1.15; margin: 0; }
+    .subtitle { color: #666d76; font-size: 13px; margin-top: 3px; }
+    .alert.error { background: #fdecea; border: 1px solid #f0b3ab; border-radius: 6px; color: #a3271a;
+      margin-bottom: 18px; padding: 12px 16px; font-size: 13px; }
+    .card { background: #fff; border: 1px solid #e0e3e7; border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.06); overflow: hidden; }
+    .card-header { background: #2d3239; border-bottom: 1px solid #171a1f; color: #fff;
+      font-size: 13px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase;
+      min-height: 46px; padding: 14px 16px; }
+    table { border-collapse: collapse; width: 100%; }
+    thead th { background: #f2f3f5; border-bottom: 1px solid #d8dbe0; color: #4a5260;
+      font-size: 12px; letter-spacing: .4px; padding: 11px 16px; text-align: left; text-transform: uppercase; }
+    tbody td { border-bottom: 1px solid #f0f1f3; padding: 11px 16px; }
+    tbody tr:hover { background: #f7f9fc; }
+    .badge { background: #eef2f8; border: 1px solid #cdd9ec; border-radius: 12px; color: #2c65c8;
+      font-size: 11px; font-weight: 700; padding: 2px 10px; }
+    .empty { color: #6b727c; padding: 24px 16px; text-align: center; }
+    .note { color: #888f98; font-size: 12px; margin-top: 14px; }
+    @media (max-width: 760px) { .app-shell { grid-template-columns: 1fr; } }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">U</span>
+        <div>
+          <div class="brand-title">User Portal</div>
+          <div class="brand-subtitle">Quản lý hồ sơ cá nhân</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a class="nav-item" href="/user/profile">Hồ sơ của tôi</a>
+        <a class="nav-item active" href="/user/directory">Danh bạ nội bộ</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="session-user">Đăng nhập: <strong th:text="${session.username}">APP_USER_1</strong></div>
+        <a class="logout-link" href="/logout">Đăng xuất</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="topbar">
+        <div class="page-title">
+          <span class="page-icon">📒</span>
+          <div>
+            <h1>Danh bạ nội bộ</h1>
+            <div class="subtitle">Thông tin cơ bản qua VIEW — không lộ địa chỉ, SĐT, email (RBAC)</div>
+          </div>
+        </div>
+      </section>
+
+      <div th:if="${error}" class="alert error">
+        <span th:text="${error}"></span>
+        <span th:if="${errorCode}" th:text="'(' + ${errorCode} + ')'"></span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Nhân viên (<span th:text="${entries != null ? entries.size() : 0}">0</span>)</div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 60px;">#</th>
+              <th>Họ và tên</th>
+              <th>Phòng ban</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:if="${entries == null or entries.isEmpty()}">
+              <td colspan="3" class="empty">Không có dữ liệu.</td>
+            </tr>
+            <tr th:each="e, it : ${entries}">
+              <td th:text="${it.count}">1</td>
+              <td th:text="${e.fullName}">Nguyen Van A</td>
+              <td><span class="badge" th:text="${e.department}">SALES</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">Nguồn dữ liệu: <code>APP_TABLE.VIEW_USER_BASIC_INFO</code> — view chỉ chứa FULL_NAME và DEPARTMENT.</div>
+    </main>
+  </div>
+</body>
+
+</html>
