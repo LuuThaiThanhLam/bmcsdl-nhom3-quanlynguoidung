@@ -230,7 +230,7 @@ PROMPT PHASE 3 - DEMO VPD VOI APP_USER_1
 PROMPT ========================================================================
 CONNECT &APP_USER_1_CONN
 
--- Ky vong: chi thay USER_ID 1 va 4 vi USERNAME = APP_USER_1.
+-- Ky vong: chi thay USER_ID 1 vi USERNAME = APP_USER_1.
 SELECT USER_ID, FULL_NAME, DEPARTMENT, USERNAME, EMAIL
 FROM APP_TABLE.USER_PROFILE
 ORDER BY USER_ID;

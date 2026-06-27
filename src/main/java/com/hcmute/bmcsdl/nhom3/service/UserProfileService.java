@@ -23,8 +23,27 @@ public class UserProfileService {
 
     public List<UserProfileDTO> getMyProfiles(HttpSession session) {
         Credential credential = getCredential(session);
-        return callOracle("Khong the lay thong tin ho so cua ban", () ->
-                userProfileRepository.findMyProfiles(credential.username(), credential.password()));
+        try {
+            // Uu tien ban co nhan OLS (file 03) de demo tren giao dien.
+            return userProfileRepository.findMyProfilesWithOls(credential.username(), credential.password());
+        } catch (DataAccessException olsNotReady) {
+            // OLS chua kich hoat (cot OLS_LABEL chua ton tai) -> fallback khong nhan.
+            return callOracle("Khong the lay thong tin ho so cua ban", () ->
+                    userProfileRepository.findMyProfiles(credential.username(), credential.password()));
+        }
+    }
+
+    /**
+     * Nhan READ cua phien user dang dang nhap (OLS). Tra null neu OLS chua kich hoat,
+     * de giao dien tu hieu la "khong co OLS".
+     */
+    public String getMySessionReadLabel(HttpSession session) {
+        Credential credential = getCredential(session);
+        try {
+            return userProfileRepository.findMySessionReadLabel(credential.username(), credential.password());
+        } catch (DataAccessException olsNotReady) {
+            return null;
+        }
     }
 
     public UserProfileDTO getMyProfile(HttpSession session, long userId) {

@@ -36,7 +36,32 @@ public class UserProfileRepository {
                 ORDER BY USER_ID
                 """.formatted(OWNER, TABLE);
 
-        return jdbc(username, password).query(sql, (rs, rowNum) -> mapProfile(rs));
+        return jdbc(username, password).query(sql, (rs, rowNum) -> mapProfile(rs, false));
+    }
+
+    /**
+     * Giong findMyProfiles nhung lay them nhan OLS cua tung dong (file 03).
+     * Neu OLS chua kich hoat (cot OLS_LABEL chua ton tai) se nem loi -> service fallback.
+     */
+    public List<UserProfileDTO> findMyProfilesWithOls(String username, String password) {
+        String sql = """
+                SELECT USER_ID, FULL_NAME, ADDRESS, PHONE_NUMBER, EMAIL,
+                       DEPARTMENT, ROLE_LEVEL, USERNAME, CREATED_AT, UPDATED_AT,
+                       LABEL_TO_CHAR(OLS_LABEL) AS OLS_LABEL_TEXT
+                FROM %s.%s
+                ORDER BY USER_ID
+                """.formatted(OWNER, TABLE);
+
+        return jdbc(username, password).query(sql, (rs, rowNum) -> mapProfile(rs, true));
+    }
+
+    /**
+     * Nhan READ cua chinh phien user dang dang nhap (OLS gan tai luc logon).
+     * Vi du: 'PUB::ALL,SALES,HR,IT'. Nem loi neu OLS chua kich hoat.
+     */
+    public String findMySessionReadLabel(String username, String password) {
+        String sql = "SELECT SA_SESSION.READ_LABEL('USER_PROFILE_OLS') FROM DUAL";
+        return jdbc(username, password).queryForObject(sql, String.class);
     }
 
     /** Lay 1 ho so theo USER_ID (van bi VPD loc, neu khong thuoc quyen se rong). */
@@ -50,7 +75,7 @@ public class UserProfileRepository {
 
         try {
             return Optional.ofNullable(
-                    jdbc(username, password).queryForObject(sql, (rs, rowNum) -> mapProfile(rs), userId));
+                    jdbc(username, password).queryForObject(sql, (rs, rowNum) -> mapProfile(rs, false), userId));
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
@@ -92,7 +117,7 @@ public class UserProfileRepository {
         return new JdbcTemplate(DatabaseConfig.createDataSource(normalizeIdentifier(username), password));
     }
 
-    private UserProfileDTO mapProfile(ResultSet rs) throws SQLException {
+    private UserProfileDTO mapProfile(ResultSet rs, boolean withOls) throws SQLException {
         UserProfileDTO dto = new UserProfileDTO();
         dto.setUserId(rs.getLong("USER_ID"));
         dto.setFullName(rs.getString("FULL_NAME"));
@@ -105,6 +130,9 @@ public class UserProfileRepository {
         dto.setUsername(rs.getString("USERNAME"));
         dto.setCreatedAt(rs.getTimestamp("CREATED_AT"));
         dto.setUpdatedAt(rs.getTimestamp("UPDATED_AT"));
+        if (withOls) {
+            dto.setOlsLabel(rs.getString("OLS_LABEL_TEXT"));
+        }
         return dto;
     }
 

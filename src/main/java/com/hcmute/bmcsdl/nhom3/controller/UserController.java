@@ -29,7 +29,14 @@ public class UserController {
         if (!isLoggedIn(session)) {
             return "redirect:/";
         }
-        model.addAttribute("profiles", userProfileService.getMyProfiles(session));
+        java.util.List<UserProfileDTO> profiles = userProfileService.getMyProfiles(session);
+        String olsReadLabel = userProfileService.getMySessionReadLabel(session);
+        boolean olsActive = olsReadLabel != null
+                || profiles.stream().anyMatch(p -> p.getOlsLabel() != null);
+
+        model.addAttribute("profiles", profiles);
+        model.addAttribute("olsReadLabel", olsReadLabel);
+        model.addAttribute("olsActive", olsActive);
         return "user/profile";
     }
 

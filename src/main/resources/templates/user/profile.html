@@ -63,6 +63,17 @@
     .badge { background: #eef2f8; border: 1px solid #cdd9ec; border-radius: 12px; color: #2c65c8;
       font-size: 11px; font-weight: 700; padding: 2px 10px; }
     .note { color: #888f98; font-size: 12px; margin-top: -8px; margin-bottom: 18px; }
+    /* OLS demo */
+    .ols-card { background: #fff; border: 1px solid #e0e3e7; border-left: 4px solid #7d3c98;
+      border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,.06); margin-bottom: 20px; padding: 16px 18px; }
+    .ols-title { align-items: center; color: #5b2c75; display: flex; font-weight: 700; gap: 8px; margin-bottom: 8px; }
+    .ols-row { color: #4a5260; font-size: 13px; margin: 4px 0; }
+    .ols-label { background: #f3e9f8; border: 1px solid #d9bfe6; border-radius: 12px; color: #7d3c98;
+      font-family: 'SF Mono', ui-monospace, Consolas, monospace; font-size: 12px; font-weight: 700; padding: 2px 10px; }
+    .ols-expl { background: #faf6fd; border: 1px dashed #d9bfe6; border-radius: 6px; color: #5b2c75;
+      font-size: 12px; line-height: 1.5; margin-top: 10px; padding: 10px 12px; }
+    .ols-inactive { background: #fff8e6; border: 1px solid #f0d79a; border-radius: 8px; color: #8a6300;
+      font-size: 13px; margin-bottom: 20px; padding: 12px 16px; }
     @media (max-width: 760px) { .app-shell { grid-template-columns: 1fr; } .profile-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -104,6 +115,27 @@
         <span th:if="${errorCode}" th:text="'(' + ${errorCode} + ')'"></span>
       </div>
 
+      <!-- ── OLS demo (file 03): nhan bao mat cap dong ── -->
+      <div th:if="${olsActive}" class="ols-card">
+        <div class="ols-title">
+          <span>🏷️</span><span>Oracle Label Security (OLS) — đang áp dụng</span>
+        </div>
+        <div class="ols-row">
+          Quyền nhãn đọc của phiên bạn (<strong th:text="${session.username}">APP_USER_1</strong>):
+          <span class="ols-label" th:text="${olsReadLabel != null ? olsReadLabel : 'N/A'}">PUB::ALL</span>
+        </div>
+        <div class="ols-expl">
+          OLS gắn một <b>nhãn bảo mật</b> vào từng dòng. Bạn chỉ đọc được dòng có nhãn nằm trong
+          phạm vi nhãn đọc của mình. Nếu một dòng bị nâng lên mức <b>PRIVATE (PRI::...)</b> vượt quá quyền của bạn,
+          dòng đó sẽ <b>tự động biến mất</b> khỏi danh sách (READ_CONTROL) — dù câu lệnh SQL không hề thay đổi.
+        </div>
+      </div>
+
+      <div th:unless="${olsActive}" class="ols-inactive">
+        🏷️ OLS chưa được kích hoạt trên bảng <code>USER_PROFILE</code> (chưa chạy file 03). Khi chạy file 03,
+        mỗi hồ sơ sẽ hiển thị thêm nhãn bảo mật và quyền nhãn của bạn.
+      </div>
+
       <div class="note">Số hồ sơ bạn được phép xem: <strong th:text="${profiles != null ? profiles.size() : 0}">0</strong></div>
 
       <div th:if="${profiles == null or profiles.isEmpty()}" class="card">
@@ -114,6 +146,7 @@
         <div class="record-head">
           <div>Mã hồ sơ <span class="uid" th:text="${p.userId}">1</span>
             <span class="badge" th:if="${p.department}" th:text="${p.department}">SALES</span>
+            <span class="ols-label" th:if="${p.olsLabel}" th:text="'🏷️ ' + ${p.olsLabel}">🏷️ PUB::SALES</span>
           </div>
           <a class="btn btn-edit" th:href="@{'/user/profile/' + ${p.userId} + '/edit'}">Chỉnh sửa</a>
         </div>
@@ -134,6 +167,8 @@
           <div class="value" th:text="${p.username}">APP_USER_1</div>
           <div class="label">Cập nhật lần cuối</div>
           <div class="value" th:text="${p.updatedAt != null ? #dates.format(p.updatedAt, 'dd/MM/yyyy HH:mm') : '—'}">—</div>
+          <div class="label" th:if="${p.olsLabel}">Nhãn OLS (file 03)</div>
+          <div class="value" th:if="${p.olsLabel}"><span class="ols-label" th:text="${p.olsLabel}">PUB::SALES</span></div>
         </div>
       </div>
     </main>

@@ -20,4 +20,7 @@ public class UserProfileDTO {
     private String username;
     private Date createdAt;
     private Date updatedAt;
+
+    // Nhan bao mat OLS cua dong (file 03). Null neu OLS chua kich hoat.
+    private String olsLabel;
 }
