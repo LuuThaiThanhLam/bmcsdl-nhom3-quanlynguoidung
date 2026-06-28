@@ -302,7 +302,7 @@ BEGIN
     max_write_label => 'PUB:EMP:HR,SALES,IT',
     min_write_label => 'PUB',
     def_label       => 'PUB:EMP:HR,SALES,IT',
-    row_label       => 'PUB:EMP:HR,SALES,IT'
+    row_label       => 'PUB:EMP:HR,SALES,IT');
 END;
 /
 
