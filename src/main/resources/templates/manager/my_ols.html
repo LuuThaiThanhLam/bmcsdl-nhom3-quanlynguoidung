@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manager - Nhãn OLS của tôi</title>
+    <th:block th:replace="~{manager/_layout :: styles}"></th:block>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside th:replace="~{manager/_layout :: sidebar('my-ols')}"></aside>
+
+      <main class="main">
+        <section class="topbar">
+          <div class="page-title">
+            <span class="page-icon"
+              ><svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="18"
+                height="18"
+              >
+                <path
+                  d="M12 2l8 4v6c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6l8-4z"
+                ></path></svg
+            ></span>
+            <div>
+              <h1>Nhãn OLS của tôi</h1>
+              <div class="subtitle">
+                Các nhãn Oracle Label Security được cấp cho tài khoản của bạn
+                (chỉ xem)
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="message error" th:if="${error}">
+          <span th:text="${error}"></span>
+          <strong
+            th:if="${errorCode}"
+            th:text="' [' + ${errorCode} + ']'"
+          ></strong>
+        </div>
+
+        <!-- Trường hợp chưa có nhãn OLS (chưa chạy patch 03 hoặc chưa được cấp) -->
+        <div
+          class="info-note"
+          th:if="${olsLabel == null or olsLabel.isEmpty()}"
+        >
+          &#9888; Chưa tìm thấy nhãn OLS cho tài khoản này. Có thể do: chưa chạy
+          PATCH_03_OLS, hoặc tài khoản chưa được cấp user label, hoặc chưa có
+          quyền xem view LBACSYS.V_MY_OLS_LABEL.
+        </div>
+
+        <div
+          class="panel"
+          th:unless="${olsLabel == null or olsLabel.isEmpty()}"
+        >
+          <div class="panel-header">
+            <div class="panel-title">
+              Nhãn OLS (chính sách USER_PROFILE_OLS)
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="info-table">
+              <tbody>
+                <tr>
+                  <td class="info-label">User</td>
+                  <td th:text="${olsLabel.USER_NAME}">APP_MANAGER_PROFILE</td>
+                </tr>
+                <tr>
+                  <td class="info-label">Chính sách (Policy)</td>
+                  <td th:text="${olsLabel.POLICY_NAME}">USER_PROFILE_OLS</td>
+                </tr>
+                <tr>
+                  <td class="info-label">Quyền đặc biệt (privileges)</td>
+                  <td>
+                    <span
+                      class="badge badge-mgr"
+                      th:if="${olsLabel.USER_PRIVILEGES != null and !#strings.isEmpty(olsLabel.USER_PRIVILEGES)}"
+                      th:text="${olsLabel.USER_PRIVILEGES}"
+                      >READ</span
+                    >
+                    <span
+                      th:if="${olsLabel.USER_PRIVILEGES == null or #strings.isEmpty(olsLabel.USER_PRIVILEGES)}"
+                      class="masked"
+                      >(không có)</span
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td class="info-label">Nhãn đọc tối đa (Max Read)</td>
+                  <td>
+                    <span
+                      class="badge badge-pri"
+                      th:text="${olsLabel.MAX_READ_LABEL}"
+                      >PRI:MGR,EMP:HR</span
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td class="info-label">Nhãn ghi tối đa (Max Write)</td>
+                  <td>
+                    <span
+                      class="badge badge-pri"
+                      th:text="${olsLabel.MAX_WRITE_LABEL}"
+                      >PRI:MGR,EMP:HR</span
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td class="info-label">Nhãn ghi tối thiểu (Min Write)</td>
+                  <td>
+                    <span
+                      class="badge badge-pub"
+                      th:text="${olsLabel.MIN_WRITE_LABEL}"
+                      >PUB</span
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td class="info-label">Nhãn đọc mặc định</td>
+                  <td>
+                    <span
+                      class="badge badge-pub"
+                      th:text="${olsLabel.DEFAULT_READ_LABEL}"
+                      >PUB:MGR,EMP:HR</span
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td class="info-label">Nhãn dòng mặc định</td>
+                  <td>
+                    <span
+                      class="badge badge-pub"
+                      th:text="${olsLabel.DEFAULT_ROW_LABEL}"
+                      >PUB:MGR:HR</span
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="info-note">
+          &#9432; <strong>Ý nghĩa:</strong> Nhãn này quyết định bạn đọc/ghi được
+          dòng nào trong bảng USER_PROFILE. Ví dụ Nhãn đọc tối đa
+          <code>PRI:MGR,EMP:HR</code> nghĩa là bạn đọc được mọi dòng phòng HR ở
+          cả cấp MGR lẫn EMP, cả PUBLIC lẫn PRIVATE. User thường chỉ có
+          <code>PUB:EMP:...</code>
+          nên không đọc được dòng MGR hay PRIVATE &mdash; đó là nguyên tắc "no
+          read up" của OLS.
+        </div>
+      </main>
+    </div>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'a12991740a9403e7',t:'MTc4MjYxNjk1OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

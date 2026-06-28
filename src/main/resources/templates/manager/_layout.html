@@ -1,0 +1,697 @@
+<!doctype html>
+<!--
+  FRAGMENT DUNG CHUNG cho cac trang Manager.
+  - th:fragment="styles"  : khoi CSS dung chung (chen vao <head>)
+  - th:fragment="sidebar" : sidebar trai. Truyen tham so active = ten muc dang chon.
+  Cach dung trong trang con:
+      <head> ... <th:block th:replace="~{manager/_layout :: styles}"></th:block> </head>
+      <aside th:replace="~{manager/_layout :: sidebar('profiles')}"></aside>
+-->
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <!-- ======================= CSS DUNG CHUNG ======================= -->
+    <style th:fragment="styles">
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #d8dbe0;
+        color: #101214;
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        font-size: 14px;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      .app-shell {
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+      /* Sidebar */
+      .sidebar {
+        background: #202327;
+        border-right: 1px solid #111315;
+        color: #d7dbe0;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+      }
+      .brand {
+        align-items: center;
+        border-bottom: 1px solid #34383e;
+        display: flex;
+        gap: 10px;
+        height: 64px;
+        padding: 0 18px;
+      }
+      .brand-mark {
+        align-items: center;
+        background: #111315;
+        border: 1px solid #454a51;
+        border-radius: 4px;
+        display: inline-flex;
+        height: 32px;
+        justify-content: center;
+        width: 32px;
+        font-weight: 700;
+        font-size: 13px;
+      }
+      .brand-title {
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+      .brand-subtitle {
+        color: #9aa2ad;
+        font-size: 11px;
+        margin-top: 2px;
+      }
+      .nav {
+        padding: 12px 8px;
+      }
+      .nav-section {
+        color: #6b7280;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        padding: 12px 10px 4px;
+      }
+      .nav-item {
+        align-items: center;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        color: #c8cdd4;
+        display: flex;
+        gap: 10px;
+        min-height: 38px;
+        padding: 8px 10px;
+        text-decoration: none;
+      }
+      .nav-item:hover {
+        background: #2c3036;
+        border-color: #3b4047;
+      }
+      .nav-item.active {
+        background: #3b3f46;
+        border-color: #565c65;
+        color: #fff;
+      }
+      .nav-icon {
+        align-items: center;
+        color: #b6bdc7;
+        display: inline-flex;
+        justify-content: center;
+        width: 20px;
+      }
+      .sidebar-footer {
+        border-top: 1px solid #34383e;
+        margin-top: auto;
+        padding: 14px 16px;
+      }
+      .session-user {
+        color: #bfc5ce;
+        font-size: 12px;
+        margin-bottom: 10px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .logout-link {
+        align-items: center;
+        background: #151719;
+        border: 1px solid #3e434a;
+        border-radius: 4px;
+        color: #e5e7eb;
+        display: flex;
+        justify-content: center;
+        min-height: 34px;
+        text-decoration: none;
+      }
+      .logout-link:hover {
+        background: #1e2124;
+      }
+      /* Main */
+      .main {
+        min-width: 0;
+        padding: 22px;
+      }
+      .topbar,
+      .panel {
+        background: #f2f3f5;
+        border: 1px solid #c8ccd1;
+        border-radius: 4px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+      }
+      .topbar {
+        align-items: center;
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+        margin-bottom: 18px;
+        min-height: 76px;
+        padding: 16px 18px;
+      }
+      .page-title {
+        align-items: center;
+        display: flex;
+        gap: 12px;
+        min-width: 0;
+      }
+      .page-icon {
+        align-items: center;
+        background: #2e333a;
+        border-radius: 4px;
+        color: #fff;
+        display: inline-flex;
+        height: 38px;
+        justify-content: center;
+        width: 38px;
+      }
+      h1 {
+        color: #171a1f;
+        font-size: 22px;
+        line-height: 1.15;
+        margin: 0;
+      }
+      .subtitle {
+        color: #666d76;
+        font-size: 13px;
+        margin-top: 3px;
+      }
+      /* Stat cards */
+      .stat-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-bottom: 20px;
+      }
+      .stat-card {
+        background: #fff;
+        border: 1px solid #e0e3e7;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        padding: 16px 20px;
+        position: relative;
+        overflow: hidden;
+      }
+      .stat-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+      }
+      .stat-card.blue::before {
+        background: #2c65c8;
+      }
+      .stat-card.green::before {
+        background: #1e8449;
+      }
+      .stat-card.amber::before {
+        background: #d68910;
+      }
+      .stat-card.purple::before {
+        background: #7d3c98;
+      }
+      .stat-label {
+        color: #6b727c;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+      }
+      .stat-value {
+        color: #171a1f;
+        font-size: 30px;
+        font-weight: 700;
+        line-height: 1;
+        margin-top: 6px;
+      }
+      /* Buttons */
+      .button {
+        align-items: center;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        cursor: pointer;
+        display: inline-flex;
+        gap: 6px;
+        justify-content: center;
+        min-height: 30px;
+        padding: 5px 10px;
+        text-decoration: none;
+        white-space: nowrap;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .button.primary {
+        background: #2c65c8;
+        border-color: #1f55b0;
+        color: #fff;
+      }
+      .button.secondary {
+        background: #fff;
+        border-color: #babfc7;
+        color: #171a1f;
+      }
+      .button.warning {
+        background: #c98a16;
+        border-color: #a9700e;
+        color: #fff;
+      }
+      .button.success {
+        background: #1e8449;
+        border-color: #186b3b;
+        color: #fff;
+      }
+      .button.danger {
+        background: #b93442;
+        border-color: #9d2633;
+        color: #fff;
+      }
+      /* Messages */
+      .message {
+        border-radius: 4px;
+        margin-bottom: 14px;
+        padding: 10px 12px;
+      }
+      .message.success {
+        background: #e3f3e8;
+        border: 1px solid #9fcbaa;
+        color: #1f5f2e;
+      }
+      .message.error {
+        background: #f7e3e5;
+        border: 1px solid #d6949c;
+        color: #7e1f2a;
+      }
+      .info-note {
+        background: #e8f4fd;
+        border: 1px solid #bce0fb;
+        color: #0b5f99;
+        border-radius: 4px;
+        padding: 10px 14px;
+        margin-bottom: 14px;
+        font-size: 13px;
+      }
+      /* Panel + table */
+      .panel {
+        margin-bottom: 20px;
+      }
+      .panel-header {
+        align-items: center;
+        background: #2d3239;
+        border-bottom: 1px solid #171a1f;
+        color: #fff;
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+        min-height: 48px;
+        padding: 9px 14px;
+        border-radius: 3px 3px 0 0;
+      }
+      .panel-title {
+        font-weight: 700;
+      }
+      .panel-tools {
+        align-items: center;
+        display: flex;
+        gap: 8px;
+      }
+      .search-input {
+        background: #fff;
+        border: 1px solid #aeb4bd;
+        border-radius: 4px;
+        color: #101214;
+        height: 32px;
+        min-width: 240px;
+        padding: 6px 10px;
+      }
+      .table-wrap {
+        overflow: auto;
+        background: #fff;
+        border-radius: 0 0 3px 3px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      th,
+      td {
+        border-bottom: 1px solid #d6d9dd;
+        padding: 9px 12px;
+        text-align: left;
+        vertical-align: middle;
+      }
+      th {
+        background: #f7f8f9;
+        color: #23272d;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      tbody tr:hover {
+        background: #eceff3;
+      }
+      .badge {
+        border-radius: 3px;
+        color: #fff;
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+      }
+      .badge-pub {
+        background: #1e8449;
+      }
+      .badge-pri {
+        background: #b03a2e;
+      }
+      .badge-mgr {
+        background: #7d3c98;
+      }
+      .badge-emp {
+        background: #2c65c8;
+      }
+      .badge-yes {
+        background: #27ae60;
+      }
+      .badge-no {
+        background: #7f8c8d;
+      }
+      .badge-none {
+        background: #7f8c8d;
+      }
+      .masked {
+        color: #aab;
+        font-style: italic;
+      }
+      .actions {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+      }
+      .empty-state {
+        color: #6b727c;
+        padding: 34px 20px;
+        text-align: center;
+      }
+      /* Info table (key-value) */
+      .info-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #eef2f6;
+      }
+      .info-table tr:last-child td {
+        border-bottom: none;
+      }
+      .info-label {
+        font-weight: 600;
+        color: #3d444d;
+        width: 260px;
+      }
+      /* Modal */
+      .modal {
+        align-items: center;
+        background: rgba(0, 0, 0, 0.52);
+        display: none;
+        inset: 0;
+        justify-content: center;
+        padding: 20px;
+        position: fixed;
+        z-index: 30;
+      }
+      .modal.open {
+        display: flex;
+      }
+      .dialog {
+        background: #fff;
+        border: 1px solid #8e959f;
+        border-radius: 6px;
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+        width: min(560px, 100%);
+        max-height: 92vh;
+        overflow: auto;
+      }
+      .dialog-header {
+        align-items: center;
+        background: #2d3239;
+        color: #fff;
+        display: flex;
+        justify-content: space-between;
+        min-height: 44px;
+        padding: 10px 16px;
+      }
+      .dialog-title {
+        font-weight: 700;
+      }
+      .dialog-body {
+        padding: 18px;
+      }
+      .dialog-footer {
+        align-items: center;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        padding: 12px 16px;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 14px;
+      }
+      .field label {
+        font-weight: 600;
+        color: #3d444d;
+        font-size: 13px;
+      }
+      .field input {
+        background: #fff;
+        border: 1px solid #babfc7;
+        border-radius: 4px;
+        color: #101214;
+        height: 36px;
+        padding: 6px 12px;
+        width: 100%;
+      }
+      .field input[readonly] {
+        background: #f1f2f4;
+        color: #6b727c;
+      }
+      .close-btn {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 20px;
+      }
+      @media (max-width: 920px) {
+        .app-shell {
+          grid-template-columns: 1fr;
+        }
+        .stat-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ======================= SIDEBAR DUNG CHUNG ======================= -->
+    <aside class="sidebar" th:fragment="sidebar(active)">
+      <div class="brand">
+        <span class="brand-mark">PM</span>
+        <div>
+          <div class="brand-title">Profile Manager</div>
+          <div class="brand-subtitle">Bảng điều khiển</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <div class="nav-section">Quản lý</div>
+        <a
+          class="nav-item"
+          th:classappend="${active == 'dashboard'} ? ' active'"
+          href="/manager/dashboard"
+        >
+          <span class="nav-icon"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              width="18"
+              height="18"
+            >
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect></svg
+          ></span>
+          <span>Tổng quan</span>
+        </a>
+        <a
+          class="nav-item"
+          th:classappend="${active == 'profiles'} ? ' active'"
+          href="/manager/profiles"
+        >
+          <span class="nav-icon"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              width="18"
+              height="18"
+            >
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle></svg
+          ></span>
+          <span>Hồ sơ phòng ban</span>
+        </a>
+        <div class="nav-section">Thông tin của tôi</div>
+        <a
+          class="nav-item"
+          th:classappend="${active == 'my-account'} ? ' active'"
+          href="/manager/my-account"
+        >
+          <span class="nav-icon"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              width="18"
+              height="18"
+            >
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle></svg
+          ></span>
+          <span>Tài khoản</span>
+        </a>
+        <a
+          class="nav-item"
+          th:classappend="${active == 'my-roles'} ? ' active'"
+          href="/manager/my-roles"
+        >
+          <span class="nav-icon"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              width="18"
+              height="18"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg
+          ></span>
+          <span>Role &amp; Quyền</span>
+        </a>
+        <a
+          class="nav-item"
+          th:classappend="${active == 'my-profile'} ? ' active'"
+          href="/manager/my-profile"
+        >
+          <span class="nav-icon"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              width="18"
+              height="18"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline></svg
+          ></span>
+          <span>Profile (giới hạn)</span>
+        </a>
+        <a
+          class="nav-item"
+          th:classappend="${active == 'my-ols'} ? ' active'"
+          href="/manager/my-ols"
+        >
+          <span class="nav-icon"
+            ><svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              width="18"
+              height="18"
+            >
+              <path
+                d="M12 2l8 4v6c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6l8-4z"
+              ></path></svg
+          ></span>
+          <span>Nhãn OLS của tôi</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="session-user">
+          Đăng nhập:
+          <strong th:text="${session.username}">APP_MANAGER_PROFILE</strong>
+        </div>
+        <a class="logout-link" href="/logout">Đăng xuất</a>
+      </div>
+    </aside>
+
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'a1298dbe6a9703e7',t:'MTc4MjYxNjgwNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
