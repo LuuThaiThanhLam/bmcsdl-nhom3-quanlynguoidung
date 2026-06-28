@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manager - Profile (giới hạn)</title>
+    <th:block th:replace="~{manager/_layout :: styles}"></th:block>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside th:replace="~{manager/_layout :: sidebar('my-profile')}"></aside>
+
+      <main class="main">
+        <section class="topbar">
+          <div class="page-title">
+            <span class="page-icon"
+              ><svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="18"
+                height="18"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline></svg
+            ></span>
+            <div>
+              <h1>Profile (giới hạn tài nguyên)</h1>
+              <div class="subtitle">
+                Các giới hạn profile Oracle áp dụng cho tài khoản của bạn (chỉ
+                xem)
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="message error" th:if="${error}">
+          <span th:text="${error}"></span>
+          <strong
+            th:if="${errorCode}"
+            th:text="' [' + ${errorCode} + ']'"
+          ></strong>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              Giới hạn tài nguyên (USER_RESOURCE_LIMITS)
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tài nguyên (Resource)</th>
+                  <th>Giới hạn (LIMIT)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:if="${#lists.isEmpty(profileLimits)}">
+                  <td colspan="2">
+                    <div class="empty-state">
+                      Không lấy được giới hạn profile.
+                    </div>
+                  </td>
+                </tr>
+                <tr th:each="r : ${profileLimits}">
+                  <td>
+                    <strong th:text="${r.RESOURCE_NAME}"
+                      >SESSIONS_PER_USER</strong
+                    >
+                  </td>
+                  <td>
+                    <span
+                      class="badge"
+                      th:classappend="${r.LIMIT == 'UNLIMITED'} ? ' badge-yes' : (${r.LIMIT == 'DEFAULT'} ? ' badge-no' : ' badge-emp')"
+                      th:text="${r.LIMIT}"
+                      >UNLIMITED</span
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="info-note">
+          &#9432; Đây là khái niệm <strong>Profile của Oracle</strong> (giới hạn
+          SESSIONS_PER_USER, CONNECT_TIME, IDLE_TIME, FAILED_LOGIN_ATTEMPTS,
+          PASSWORD_LIFE_TIME). Manager chỉ <strong>xem</strong>, không sửa
+          &mdash; việc tạo/sửa profile là của Admin.
+        </div>
+      </main>
+    </div>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'a129920d0e3c03e7',t:'MTc4MjYxNjk4Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

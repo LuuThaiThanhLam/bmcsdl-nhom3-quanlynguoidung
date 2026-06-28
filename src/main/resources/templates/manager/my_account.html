@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manager - Tài khoản của tôi</title>
+    <th:block th:replace="~{manager/_layout :: styles}"></th:block>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside th:replace="~{manager/_layout :: sidebar('my-account')}"></aside>
+
+      <main class="main">
+        <section class="topbar">
+          <div class="page-title">
+            <span class="page-icon"
+              ><svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="18"
+                height="18"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle></svg
+            ></span>
+            <div>
+              <h1>Tài khoản của tôi</h1>
+              <div class="subtitle">
+                Thông tin tài khoản Oracle của chính bạn (chỉ xem)
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="message error" th:if="${error}">
+          <span th:text="${error}"></span>
+          <strong
+            th:if="${errorCode}"
+            th:text="' [' + ${errorCode} + ']'"
+          ></strong>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Thông tin tài khoản</div>
+          </div>
+          <div class="table-wrap">
+            <table class="info-table">
+              <tbody>
+                <tr>
+                  <td class="info-label">Tên đăng nhập</td>
+                  <td th:text="${account != null ? account.USERNAME : '-'}">
+                    APP_MANAGER_PROFILE
+                  </td>
+                </tr>
+                <tr>
+                  <td class="info-label">Phòng ban (USER_DEPT_MAP)</td>
+                  <td th:text="${department != null ? department : '-'}">HR</td>
+                </tr>
+                <tr>
+                  <td class="info-label">Trạng thái tài khoản</td>
+                  <td>
+                    <span
+                      class="badge"
+                      th:classappend="${account != null and account.ACCOUNT_STATUS != null and #strings.contains(account.ACCOUNT_STATUS,'OPEN')} ? ' badge-yes' : ' badge-no'"
+                      th:text="${account != null ? account.ACCOUNT_STATUS : '-'}"
+                      >OPEN</span
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td class="info-label">Default Tablespace</td>
+                  <td
+                    th:text="${account != null ? account.DEFAULT_TABLESPACE : '-'}"
+                  >
+                    TS_ADMIN
+                  </td>
+                </tr>
+                <tr>
+                  <td class="info-label">Temporary Tablespace</td>
+                  <td
+                    th:text="${account != null ? account.TEMPORARY_TABLESPACE : '-'}"
+                  >
+                    TEMP
+                  </td>
+                </tr>
+                <tr>
+                  <td class="info-label">Ngày tạo</td>
+                  <td
+                    th:text="${account != null and account.CREATED != null ? #dates.format(account.CREATED, 'dd/MM/yyyy HH:mm:ss') : '-'}"
+                  >
+                    01/01/2026
+                  </td>
+                </tr>
+                <tr>
+                  <td class="info-label">Ngày hết hạn mật khẩu</td>
+                  <td
+                    th:text="${account != null and account.EXPIRY_DATE != null ? #dates.format(account.EXPIRY_DATE, 'dd/MM/yyyy HH:mm:ss') : 'N/A'}"
+                  >
+                    N/A
+                  </td>
+                </tr>
+                <tr>
+                  <td class="info-label">Ngày khóa</td>
+                  <td
+                    th:text="${account != null and account.LOCK_DATE != null ? #dates.format(account.LOCK_DATE, 'dd/MM/yyyy HH:mm:ss') : 'N/A'}"
+                  >
+                    N/A
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="info-note">
+          &#9432; Trang này truy vấn view <strong>USER_USERS</strong> &mdash;
+          mỗi user Oracle tự xem được thông tin tài khoản của chính mình (đúng
+          yêu cầu đề bài: "user được xem thông tin account của mình").
+        </div>
+      </main>
+    </div>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'a129932a5bbe03e7',t:'MTc4MjYxNzAyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

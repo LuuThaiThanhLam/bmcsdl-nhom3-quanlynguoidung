@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manager - Role &amp; Quyền</title>
+    <th:block th:replace="~{manager/_layout :: styles}"></th:block>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside th:replace="~{manager/_layout :: sidebar('my-roles')}"></aside>
+
+      <main class="main">
+        <section class="topbar">
+          <div class="page-title">
+            <span class="page-icon"
+              ><svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="18"
+                height="18"
+              >
+                <path
+                  d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+                ></path></svg
+            ></span>
+            <div>
+              <h1>Role &amp; Quyền của tôi</h1>
+              <div class="subtitle">
+                Role, system privilege, object privilege &amp; column privilege
+                của chính bạn (chỉ xem)
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="message error" th:if="${error}">
+          <span th:text="${error}"></span>
+          <strong
+            th:if="${errorCode}"
+            th:text="' [' + ${errorCode} + ']'"
+          ></strong>
+        </div>
+
+        <!-- Session roles -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Role đang kích hoạt (SESSION_ROLES)</div>
+          </div>
+          <div
+            class="dialog-body"
+            style="background: #fff; border-radius: 0 0 3px 3px"
+          >
+            <span th:if="${#lists.isEmpty(sessionRoles)}" class="empty-state"
+              >Không có role nào đang enable.</span
+            >
+            <span
+              th:each="r : ${sessionRoles}"
+              class="badge badge-yes"
+              style="margin: 2px 4px; display: inline-block"
+              th:text="${r}"
+              >APP_ROLE_PROFILE_MGR</span
+            >
+          </div>
+        </div>
+
+        <!-- Roles granted (USER_ROLE_PRIVS) -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Role được cấp (USER_ROLE_PRIVS)</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Role</th>
+                  <th>Admin Option</th>
+                  <th>Default Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:if="${#lists.isEmpty(rolePrivs)}">
+                  <td colspan="3">
+                    <div class="empty-state">Không có role.</div>
+                  </td>
+                </tr>
+                <tr th:each="r : ${rolePrivs}">
+                  <td>
+                    <strong th:text="${r.GRANTED_ROLE}"
+                      >APP_ROLE_PROFILE_MGR</strong
+                    >
+                  </td>
+                  <td>
+                    <span
+                      th:class="${'badge ' + (r.ADMIN_OPTION == 'YES' ? 'badge-yes' : 'badge-no')}"
+                      th:text="${r.ADMIN_OPTION}"
+                      >NO</span
+                    >
+                  </td>
+                  <td>
+                    <span
+                      th:class="${'badge ' + (r.DEFAULT_ROLE == 'YES' ? 'badge-yes' : 'badge-no')}"
+                      th:text="${r.DEFAULT_ROLE}"
+                      >YES</span
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- System privileges (USER_SYS_PRIVS) -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">System Privileges (USER_SYS_PRIVS)</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Privilege</th>
+                  <th>Admin Option</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:if="${#lists.isEmpty(sysPrivs)}">
+                  <td colspan="2">
+                    <div class="empty-state">
+                      Không có system privilege cấp trực tiếp.
+                    </div>
+                  </td>
+                </tr>
+                <tr th:each="s : ${sysPrivs}">
+                  <td th:text="${s.PRIVILEGE}">CREATE SESSION</td>
+                  <td>
+                    <span
+                      th:class="${'badge ' + (s.ADMIN_OPTION == 'YES' ? 'badge-yes' : 'badge-no')}"
+                      th:text="${s.ADMIN_OPTION}"
+                      >NO</span
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Object privileges (USER_TAB_PRIVS_RECD) -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              Object Privileges nhận được (USER_TAB_PRIVS_RECD)
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Owner</th>
+                  <th>Đối tượng</th>
+                  <th>Privilege</th>
+                  <th>Người cấp</th>
+                  <th>Grantable</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:if="${#lists.isEmpty(tabPrivs)}">
+                  <td colspan="5">
+                    <div class="empty-state">Không có object privilege.</div>
+                  </td>
+                </tr>
+                <tr th:each="t : ${tabPrivs}">
+                  <td th:text="${t.OWNER}">APP_TABLE</td>
+                  <td>
+                    <strong th:text="${t.TABLE_NAME}">USER_PROFILE</strong>
+                  </td>
+                  <td th:text="${t.PRIVILEGE}">SELECT</td>
+                  <td th:text="${t.GRANTOR}">APP_TABLE</td>
+                  <td>
+                    <span
+                      th:class="${'badge ' + (t.GRANTABLE == 'YES' ? 'badge-yes' : 'badge-no')}"
+                      th:text="${t.GRANTABLE}"
+                      >NO</span
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Column privileges (USER_COL_PRIVS_RECD) -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              Column Privileges nhận được (USER_COL_PRIVS_RECD)
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Owner</th>
+                  <th>Đối tượng</th>
+                  <th>Cột</th>
+                  <th>Privilege</th>
+                  <th>Người cấp</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:if="${#lists.isEmpty(colPrivs)}">
+                  <td colspan="5">
+                    <div class="empty-state">Không có column privilege.</div>
+                  </td>
+                </tr>
+                <tr th:each="c : ${colPrivs}">
+                  <td th:text="${c.OWNER}">APP_TABLE</td>
+                  <td>
+                    <strong th:text="${c.TABLE_NAME}">USER_PROFILE</strong>
+                  </td>
+                  <td
+                    style="color: #7d3c98; font-weight: 600"
+                    th:text="${c.COLUMN_NAME}"
+                  >
+                    EMAIL
+                  </td>
+                  <td th:text="${c.PRIVILEGE}">UPDATE</td>
+                  <td th:text="${c.GRANTOR}">APP_TABLE</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="info-note">
+          &#9432; Các bảng này truy vấn view
+          <strong
+            >USER_ROLE_PRIVS, USER_SYS_PRIVS, USER_TAB_PRIVS_RECD,
+            USER_COL_PRIVS_RECD, SESSION_ROLES</strong
+          >
+          &mdash; mỗi user tự xem được quyền của chính mình. Đây cũng là cách
+          chứng minh RBAC: manager chỉ có quyền UPDATE 4 cột trên USER_PROFILE.
+        </div>
+      </main>
+    </div>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'a129929f9a8a03e7',t:'MTc4MjYxNzAwNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

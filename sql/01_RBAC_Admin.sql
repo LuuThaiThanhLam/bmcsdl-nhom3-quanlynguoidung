@@ -15,8 +15,8 @@ MUC TIEU LAB
   1. Tao tablespace cho admin, du lieu ung dung va user thuong.
   2. Tao ROLE theo mo hinh RBAC.
   3. Tao PROFILE gioi han tai nguyen / chinh sach dang nhap.
-  4. Tao cac USER demo cua he thong.
-  5. Tao bang APP_TABLE.USER_PROFILE va du lieu mau.
+  4. Tao cac USER demo cua he thong (gom APP_MANAGER_SALES cho demo VPD cung phong ban).
+  5. Tao bang APP_TABLE.USER_PROFILE, bang phu USER_DEPT_MAP va du lieu mau HR/SALES.
   6. Demo cac chuc nang Admin bang lenh SQL truc tiep.
 
 CAC FILE CHAY SAU FILE NAY
@@ -183,6 +183,12 @@ CREATE USER APP_MANAGER_PROFILE IDENTIFIED BY "123456"
   QUOTA 200M ON TS_ADMIN
   PROFILE APP_PROFILE_USER;
 
+CREATE USER APP_MANAGER_SALES IDENTIFIED BY "123456"
+  DEFAULT TABLESPACE TS_ADMIN
+  TEMPORARY TABLESPACE TEMP
+  QUOTA 200M ON TS_ADMIN
+  PROFILE APP_PROFILE_USER;
+
 CREATE USER APP_USER_1 IDENTIFIED BY "123456"
   DEFAULT TABLESPACE TS_USERS
   TEMPORARY TABLESPACE TEMP
@@ -214,6 +220,7 @@ GRANT APP_ROLE_DB_ADMIN     TO APP_DBA_ADMIN;
 GRANT APP_ROLE_TABLE_MGR    TO APP_TABLE;
 GRANT APP_ROLE_SYSTEM_ADMIN TO APP_SYSTEM_ADMIN;
 GRANT APP_ROLE_PROFILE_MGR  TO APP_MANAGER_PROFILE;
+GRANT APP_ROLE_PROFILE_MGR  TO APP_MANAGER_SALES;
 GRANT APP_ROLE_USER         TO APP_USER_1;
 GRANT APP_ROLE_USER         TO APP_USER_3;
 GRANT APP_ROLE_OLS_MGR      TO APP_OLS_MGR;
@@ -248,6 +255,10 @@ GRANT SELECT ON SYS.DBA_OBJECTS    TO APP_DBA_ADMIN;
 GRANT SELECT ON SYS.DBA_TAB_PRIVS  TO APP_DBA_ADMIN;
 GRANT SELECT ON SYS.DBA_COL_PRIVS  TO APP_DBA_ADMIN;
 
+-- Cấp quyền thêm cho phần audit và kill session
+GRANT EXECUTE ON DBMS_AUDIT_MGMT TO APP_DBA_ADMIN;
+GRANT ALTER SYSTEM TO APP_DBA_ADMIN;
+
 PROMPT ========================================================================
 PROMPT PHASE 2 - CONNECT APP_TABLE: tao bang du lieu mau va view
 PROMPT ========================================================================
@@ -261,6 +272,12 @@ CONNECT &APP_TABLE_CONN
 --    XOA BANG/SEQUENCE CU NEU DA CHAY TRUOC (de chay lai sach, tao dung schema moi).
 --    Bo qua loi neu object chua ton tai (ORA-00942 / ORA-02289).
 -- ----------------------------------------------------------------------------
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE USER_DEPT_MAP CASCADE CONSTRAINTS';
+EXCEPTION
+  WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
 BEGIN
   EXECUTE IMMEDIATE 'DROP TABLE USER_PROFILE CASCADE CONSTRAINTS';
 EXCEPTION
@@ -301,6 +318,9 @@ END;
 
 -- ----------------------------------------------------------------------------
 -- 10. THEM DU LIEU MAU
+--    ROLE_LEVEL: 2 = quan ly (MGR), 1 = nhan vien (EMP).
+--    USERNAME moi dong = chu nhan ho so (dung cho column masking o file 03).
+--    USERNAME chi la chuoi demo, khong can tao user Oracle that cho tung dong.
 -- ----------------------------------------------------------------------------
 INSERT INTO USER_PROFILE
   (USER_ID, FULL_NAME, ADDRESS, PHONE_NUMBER, EMAIL, DEPARTMENT, ROLE_LEVEL, USERNAME)
@@ -322,6 +342,41 @@ INSERT INTO USER_PROFILE
 VALUES
   (4, 'Pham Thi D', '101 Nguyen Hue, Q1, HCMC', '0976543210', 'd.pham@company.com', 'SALES', 1, 'APP_USER_3');
 
+INSERT INTO USER_PROFILE
+  (USER_ID, FULL_NAME, ADDRESS, PHONE_NUMBER, EMAIL, DEPARTMENT, ROLE_LEVEL, USERNAME)
+VALUES
+  (5, 'Hoang Van E', '222 Pasteur, Q3, HCMC', '0923456789', 'e.hoang@company.com', 'HR', 1, 'APP_HR_E');
+
+INSERT INTO USER_PROFILE
+  (USER_ID, FULL_NAME, ADDRESS, PHONE_NUMBER, EMAIL, DEPARTMENT, ROLE_LEVEL, USERNAME)
+VALUES
+  (6, 'Mai Thi F', '333 Hai Ba Trung, Q1, HCMC', '0934567890', 'f.mai@company.com', 'HR', 1, 'APP_HR_F');
+
+INSERT INTO USER_PROFILE
+  (USER_ID, FULL_NAME, ADDRESS, PHONE_NUMBER, EMAIL, DEPARTMENT, ROLE_LEVEL, USERNAME)
+VALUES
+  (7, 'Vo Thi Sales MGR', '12 Nguyen Trai, Q1, HCMC', '0931111222', 'sales.mgr@company.com', 'SALES', 2, 'APP_MANAGER_SALES');
+
+INSERT INTO USER_PROFILE
+  (USER_ID, FULL_NAME, ADDRESS, PHONE_NUMBER, EMAIL, DEPARTMENT, ROLE_LEVEL, USERNAME)
+VALUES
+  (8, 'Ngo Van Sales NV', '34 Cach Mang Thang 8, Q3, HCMC', '0933333444', 'sales.staff@company.com', 'SALES', 1, 'APP_SALES_NV');
+
+COMMIT;
+
+-- ----------------------------------------------------------------------------
+-- 10b. TAO BANG PHU USER_DEPT_MAP
+--      Anh xa USERNAME manager -> DEPARTMENT. Bang nay KHONG bi VPD bao ve
+--      nen function VPD tra cuu o day se khong bi de quy (Cach A).
+-- ----------------------------------------------------------------------------
+CREATE TABLE USER_DEPT_MAP (
+  USERNAME    VARCHAR2(128) PRIMARY KEY,
+  DEPARTMENT  VARCHAR2(50) NOT NULL
+);
+
+INSERT INTO USER_DEPT_MAP (USERNAME, DEPARTMENT) VALUES ('APP_MANAGER_PROFILE', 'HR');
+INSERT INTO USER_DEPT_MAP (USERNAME, DEPARTMENT) VALUES ('APP_MANAGER_SALES',   'SALES');
+
 COMMIT;
 
 -- ----------------------------------------------------------------------------
@@ -340,11 +395,12 @@ FROM USER_PROFILE;
 GRANT SELECT, INSERT, UPDATE, DELETE ON USER_PROFILE TO APP_ROLE_DB_ADMIN;
 GRANT SELECT ON USER_PROFILE TO APP_ROLE_SYSTEM_ADMIN;
 GRANT SELECT ON USER_PROFILE TO APP_ROLE_PROFILE_MGR;
+GRANT SELECT ON USER_DEPT_MAP TO APP_ROLE_PROFILE_MGR;
 GRANT SELECT ON VIEW_USER_BASIC_INFO TO APP_ROLE_PROFILE_MGR;
 GRANT SELECT ON VIEW_USER_BASIC_INFO TO APP_ROLE_USER;
 
 -- APP_DBA_ADMIN co GRANT OPTION de cap lai object privilege neu can demo Admin.
-GRANT SELECT, INSERT, UPDATE, DELETE ON USER_PROFILE TO APP_DBA_ADMIN WITH GRANT OPTION;
+GRANT SELECT, INSERT, UPDATE, DELETE ON USER_ PROFILE TO APP_DBA_ADMIN WITH GRANT OPTION;
 GRANT SELECT ON VIEW_USER_BASIC_INFO TO APP_DBA_ADMIN WITH GRANT OPTION;
 
 PROMPT ========================================================================

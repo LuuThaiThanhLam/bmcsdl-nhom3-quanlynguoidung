@@ -447,6 +447,8 @@
 </head>
 
 <body>
+  <!-- Thêm thư viện Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
@@ -463,6 +465,7 @@
         <a class="nav-item" href="/admin/roles"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span><span>Role Management</span></a>
         <a class="nav-item" href="/admin/profiles"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span>Profile Management</span></a>
         <a class="nav-item" href="/admin/audit-logs"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></span><span>Audit Logs</span></a>
+        <a class="nav-item" href="/admin/sessions"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg></span><span>Session Management</span></a>
       </nav>
 
       <div class="sidebar-footer">
@@ -508,7 +511,7 @@
         <div class="stat-card amber">
           <div class="stat-label">Audit Events</div>
           <div class="stat-value" th:text="${auditCount ?: 0}">0</div>
-          <div class="stat-sub" th:text="${failedLogons ?: 0} + ' failed logon(s)'">0 failed logons</div>
+          <div class="stat-sub" th:text="${unifiedAuditCount ?: 0} + ' unified / ' + (${fgaAuditCount ?: 0}) + ' fga'">0 unified / 0 fga</div>
           <div class="stat-icon">📋</div>
         </div>
       </div>
@@ -519,100 +522,44 @@
         <!-- User Details -->
         <div class="dash-panel">
           <div class="dash-panel-header">
-            <div class="dash-panel-title">User Management</div>
+            <div class="dash-panel-title">User Account Status</div>
             <a class="dash-panel-link" href="/admin/users">View all &rarr;</a>
           </div>
-          <div class="dash-panel-body">
-            <div class="metric-row">
-              <span class="metric-name">Total application users</span>
-              <span class="metric-val blue" th:text="${userCount ?: 0}">0</span>
-            </div>
-            <div class="metric-row">
-              <span class="metric-name">OPEN — active accounts</span>
-              <span class="metric-val green" th:text="${openUsers ?: 0}">0</span>
-            </div>
-            <div class="metric-row">
-              <span class="metric-name">LOCKED — locked accounts</span>
-              <span class="metric-val red" th:text="${lockedUsers ?: 0}">0</span>
-            </div>
-            <div class="metric-row">
-              <span class="metric-name">EXPIRED — expired passwords</span>
-              <span class="metric-val amber" th:text="${expiredUsers ?: 0}">0</span>
-            </div>
+          <div class="dash-panel-body" style="padding: 16px; height: 220px;">
+            <canvas id="userChart"></canvas>
           </div>
         </div>
 
         <!-- Role Details -->
         <div class="dash-panel">
           <div class="dash-panel-header">
-            <div class="dash-panel-title">Role Management</div>
+            <div class="dash-panel-title">Role Authentication</div>
             <a class="dash-panel-link" href="/admin/roles">View all &rarr;</a>
           </div>
-          <div class="dash-panel-body">
-            <div class="metric-row">
-              <span class="metric-name">Total application roles</span>
-              <span class="metric-val blue" th:text="${roleCount ?: 0}">0</span>
-            </div>
-            <div class="metric-row">
-              <span class="metric-name">PASSWORD — roles with password</span>
-              <span class="metric-val amber" th:text="${passwordRoles ?: 0}">0</span>
-            </div>
-            <div class="metric-row">
-              <span class="metric-name">NONE — no password required</span>
-              <span class="metric-val green" th:text="${noneRoles ?: 0}">0</span>
-            </div>
-            <div class="metric-row">
-              <span class="metric-name">EXTERNAL — external authentication</span>
-              <span class="metric-val" th:text="${externalRoles ?: 0}">0</span>
-            </div>
+          <div class="dash-panel-body" style="padding: 16px; height: 220px;">
+            <canvas id="roleChart"></canvas>
           </div>
         </div>
 
         <!-- Profile Details -->
         <div class="dash-panel">
           <div class="dash-panel-header">
-            <div class="dash-panel-title">Profile Management</div>
+            <div class="dash-panel-title">Profile Assignment</div>
             <a class="dash-panel-link" href="/admin/profiles">View all &rarr;</a>
           </div>
-          <div class="dash-panel-body">
-            <div class="metric-row">
-              <span class="metric-name">Total application profiles</span>
-              <span class="metric-val blue" th:text="${profileCount ?: 0}">0</span>
-            </div>
-            <div class="metric-row">
-              <span class="metric-name">In use — assigned to users</span>
-              <span class="metric-val green" th:text="${inUseProfiles ?: 0}">0</span>
-            </div>
-            <div class="metric-row">
-              <span class="metric-name">Unused — not assigned</span>
-              <span class="metric-val amber" th:text="${unusedProfiles ?: 0}">0</span>
-            </div>
+          <div class="dash-panel-body" style="padding: 16px; height: 220px;">
+            <canvas id="profileChart"></canvas>
           </div>
         </div>
 
         <!-- Audit Details -->
         <div class="dash-panel">
           <div class="dash-panel-header">
-            <div class="dash-panel-title">Audit Summary</div>
+            <div class="dash-panel-title">Audit Activity Overview</div>
             <a class="dash-panel-link" href="/admin/audit-logs">View logs &rarr;</a>
           </div>
-          <div class="dash-panel-body">
-            <div class="metric-row">
-              <span class="metric-name">Total events sampled</span>
-              <span class="metric-val blue" th:text="${auditCount ?: 0}">0</span>
-            </div>
-            <div class="metric-row">
-              <span class="metric-name">Failed logon attempts</span>
-              <span class="metric-val red" th:text="${failedLogons ?: 0}">0</span>
-            </div>
-            <div class="metric-row">
-              <span class="metric-name">Distinct active users</span>
-              <span class="metric-val green" th:text="${activeUsers ?: 0}">0</span>
-            </div>
-            <div class="metric-row">
-              <span class="metric-name">Database objects accessed</span>
-              <span class="metric-val" th:text="${objectsAffected ?: 0}">0</span>
-            </div>
+          <div class="dash-panel-body" style="padding: 16px; height: 220px;">
+            <canvas id="auditChart"></canvas>
           </div>
         </div>
 
@@ -634,6 +581,118 @@
     }
     updateClock();
     setInterval(updateClock, 1000);
+
+    // Chart.js Analytics
+    // Lấy dữ liệu từ Thymeleaf
+    const openUsers = [[${openUsers ?: 0}]];
+    const lockedUsers = [[${lockedUsers ?: 0}]];
+    const expiredUsers = [[${expiredUsers ?: 0}]];
+
+    const passwordRoles = [[${passwordRoles ?: 0}]];
+    const noneRoles = [[${noneRoles ?: 0}]];
+    const externalRoles = [[${externalRoles ?: 0}]];
+
+    const inUseProfiles = [[${inUseProfiles ?: 0}]];
+    const unusedProfiles = [[${unusedProfiles ?: 0}]];
+
+    const unifiedAudit = [[${unifiedAuditCount ?: 0}]];
+    const fgaAudit = [[${fgaAuditCount ?: 0}]];
+
+    // Cấu hình chung
+    Chart.defaults.font.family = '"Segoe UI", Tahoma, Arial, sans-serif';
+    Chart.defaults.color = '#4a5260';
+    
+    // 1. User Status Chart (Doughnut)
+    new Chart(document.getElementById('userChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Open', 'Locked', 'Expired'],
+        datasets: [{
+          data: [openUsers, lockedUsers, expiredUsers],
+          backgroundColor: ['#1e8449', '#b03a2e', '#d68910'],
+          borderWidth: 0,
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right' }
+        },
+        cutout: '65%'
+      }
+    });
+
+    // 2. Role Auth Chart (Pie)
+    new Chart(document.getElementById('roleChart'), {
+      type: 'pie',
+      data: {
+        labels: ['Password', 'None', 'External'],
+        datasets: [{
+          data: [passwordRoles, noneRoles, externalRoles],
+          backgroundColor: ['#d68910', '#1e8449', '#2c65c8'],
+          borderWidth: 0,
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right' }
+        }
+      }
+    });
+
+    // 3. Profile Usage Chart (Bar)
+    new Chart(document.getElementById('profileChart'), {
+      type: 'bar',
+      data: {
+        labels: ['In Use', 'Unused'],
+        datasets: [{
+          label: 'Profiles',
+          data: [inUseProfiles, unusedProfiles],
+          backgroundColor: ['#2c65c8', '#aeb4bd'],
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 } }
+        }
+      }
+    });
+
+    // 4. Audit Summary Chart (Polar Area or Bar)
+    new Chart(document.getElementById('auditChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Unified Audit', 'FGA Audit'],
+        datasets: [{
+          label: 'Logs Count',
+          data: [unifiedAudit, fgaAudit],
+          backgroundColor: ['#7d3c98', '#d68910'],
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y', // Biểu đồ ngang
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: { beginAtZero: true }
+        }
+      }
+    });
   </script>
 </body>
 

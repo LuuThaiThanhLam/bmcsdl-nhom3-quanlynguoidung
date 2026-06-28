@@ -1,13 +1,191 @@
 <!doctype html>
-<html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
   <head>
     <meta charset="UTF-8" />
-    <title>Manager Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manager - Tổng quan</title>
+    <th:block th:replace="~{manager/_layout :: styles}"></th:block>
   </head>
   <body>
-    <h1>🏢 Manager Dashboard</h1>
-    <p>Xin chào: <b th:text="${session.username}">USER</b></p>
-    <p><i>Member 3 code phần này</i></p>
-    <a href="/logout">Đăng xuất</a>
+    <div class="app-shell">
+      <aside th:replace="~{manager/_layout :: sidebar('dashboard')}"></aside>
+
+      <main class="main">
+        <section class="topbar">
+          <div class="page-title">
+            <span class="page-icon"
+              ><svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="18"
+                height="18"
+              >
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect></svg
+            ></span>
+            <div>
+              <h1>Tổng quan</h1>
+              <div class="subtitle">
+                Profile Manager &mdash; quản lý hồ sơ
+                <strong
+                  th:if="${myDepartment}"
+                  th:text="'phòng ' + ${myDepartment}"
+                  >phòng HR</strong
+                >
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="message error" th:if="${error}">
+          <span th:text="${error}"></span>
+          <strong
+            th:if="${errorCode}"
+            th:text="' [' + ${errorCode} + ']'"
+          ></strong>
+        </div>
+
+        <div class="info-note">
+          &#9432; <strong>Bảo mật đang hoạt động:</strong> Bạn chỉ thấy được hồ
+          sơ
+          <strong
+            th:text="${myDepartment != null ? 'phòng ' + myDepartment : 'phòng ban của mình'}"
+            >phòng ban của mình</strong
+          >
+          (VPD lọc theo phòng ban). Email/SĐT của người khác bị che (column
+          masking). Các dòng <span class="badge badge-pri">PRI</span> chỉ bạn
+          &amp; admin xem được (OLS).
+        </div>
+
+        <!-- Stat cards -->
+        <div class="stat-grid">
+          <div class="stat-card blue">
+            <div class="stat-label">Tổng hồ sơ thấy được</div>
+            <div class="stat-value" th:text="${totalProfiles}">0</div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-label">Quản lý (MGR)</div>
+            <div class="stat-value" th:text="${mgrCount}">0</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Nhân viên (EMP)</div>
+            <div class="stat-value" th:text="${empCount}">0</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-label">Đang PRIVATE</div>
+            <div class="stat-value" th:text="${privateCount}">0</div>
+          </div>
+        </div>
+
+        <!-- Quick view table -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Hồ sơ trong phòng ban</div>
+            <a class="button primary" href="/manager/profiles"
+              >Quản lý chi tiết &rarr;</a
+            >
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Họ tên</th>
+                  <th>Phòng ban</th>
+                  <th>Cấp bậc</th>
+                  <th>Nhãn OLS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:if="${#lists.isEmpty(profiles)}">
+                  <td colspan="5">
+                    <div class="empty-state">
+                      Không có hồ sơ nào (VPD đã lọc).
+                    </div>
+                  </td>
+                </tr>
+                <tr th:each="p : ${profiles}">
+                  <td th:text="${p.userId}">2</td>
+                  <td><strong th:text="${p.fullName}">Tran Thi B</strong></td>
+                  <td th:text="${p.department}">HR</td>
+                  <td>
+                    <span
+                      th:if="${p.roleLevel != null and p.roleLevel >= 2}"
+                      class="badge badge-mgr"
+                      >MGR</span
+                    >
+                    <span
+                      th:if="${p.roleLevel == null or p.roleLevel < 2}"
+                      class="badge badge-emp"
+                      >EMP</span
+                    >
+                  </td>
+                  <td>
+                    <span
+                      th:if="${p.olsLabelText != null and #strings.startsWith(p.olsLabelText,'PRI')}"
+                      class="badge badge-pri"
+                      th:text="${p.olsLabelText}"
+                      >PRI:MGR:HR</span
+                    >
+                    <span
+                      th:if="${p.olsLabelText != null and #strings.startsWith(p.olsLabelText,'PUB')}"
+                      class="badge badge-pub"
+                      th:text="${p.olsLabelText}"
+                      >PUB:MGR:HR</span
+                    >
+                    <span
+                      th:if="${p.olsLabelText == null}"
+                      class="badge badge-none"
+                      >N/A</span
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'a129904cfb9e03e7',t:'MTc4MjYxNjkxMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
   </body>
 </html>

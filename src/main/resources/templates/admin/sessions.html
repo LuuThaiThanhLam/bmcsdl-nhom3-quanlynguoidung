@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>User Management</title>
+  <title>Session Management</title>
   <style>
     * {
       box-sizing: border-box;
@@ -324,12 +324,6 @@
       background: #eceff3;
     }
 
-    .username {
-      color: #14171b;
-      font-weight: 700;
-      text-decoration: none;
-    }
-
     .status {
       border-radius: 3px;
       display: inline-flex;
@@ -339,12 +333,12 @@
       padding: 5px 7px;
     }
 
-    .status.open {
+    .status.active {
       background: #dcefe4;
       color: #176239;
     }
 
-    .status.locked {
+    .status.inactive {
       background: #f4dfe2;
       color: #8e2632;
     }
@@ -365,102 +359,6 @@
       gap: 18px;
       grid-template-columns: minmax(0, 1fr);
     }
-
-    .modal {
-      align-items: center;
-      background: rgba(0, 0, 0, 0.52);
-      display: none;
-      inset: 0;
-      justify-content: center;
-      padding: 20px;
-      position: fixed;
-      z-index: 20;
-    }
-
-    .modal.open {
-      display: flex;
-    }
-
-    .dialog {
-      background: #f1f2f4;
-      border: 1px solid #8e959f;
-      border-radius: 4px;
-      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
-      max-height: min(720px, 92vh);
-      overflow: auto;
-      width: min(720px, 100%);
-    }
-
-    .dialog-header {
-      align-items: center;
-      background: #2d3239;
-      color: #ffffff;
-      display: flex;
-      justify-content: space-between;
-      min-height: 44px;
-      padding: 10px 12px;
-    }
-
-    .dialog-title {
-      font-weight: 700;
-    }
-
-    .dialog-body {
-      padding: 14px;
-    }
-
-    .form-grid {
-      display: grid;
-      gap: 12px;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .dialog-footer {
-      align-items: center;
-      border-top: 1px solid #d0d4da;
-      display: flex;
-      gap: 8px;
-      justify-content: flex-end;
-      padding: 12px 14px;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    @media (max-width: 920px) {
-      .app-shell {
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar {
-        min-height: auto;
-      }
-
-      .nav {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .sidebar-footer {
-        display: none;
-      }
-
-      .topbar,
-      .panel-header {
-        align-items: stretch;
-        flex-direction: column;
-      }
-
-      .search-input {
-        min-width: 0;
-        width: 100%;
-      }
-
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-    }
   </style>
 </head>
 
@@ -477,11 +375,11 @@
 
       <nav class="nav">
         <a class="nav-item" href="/admin/dashboard"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span><span>Dashboard</span></a>
-        <a class="nav-item active" href="/admin/users"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span>User Management</span></a>
+        <a class="nav-item" href="/admin/users"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span>User Management</span></a>
         <a class="nav-item" href="/admin/roles"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span><span>Role Management</span></a>
         <a class="nav-item" href="/admin/profiles"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span>Profile Management</span></a>
         <a class="nav-item" href="/admin/audit-logs"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></span><span>Audit Logs</span></a>
-        <a class="nav-item" href="/admin/sessions"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg></span><span>Session Management</span></a>
+        <a class="nav-item active" href="/admin/sessions"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg></span><span>Session Management</span></a>
       </nav>
 
       <div class="sidebar-footer">
@@ -495,28 +393,26 @@
     <main class="main">
       <section class="topbar">
         <div class="page-title">
-          <span class="page-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+          <span class="page-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg></span>
           <div>
-            <h1>User Management</h1>
-            <div class="subtitle">Manage Oracle database users, roles, account status, and profiles</div>
+            <h1>Session Management</h1>
+            <div class="subtitle">Monitor active database connections and kill specific sessions</div>
           </div>
         </div>
-        <a class="button primary" href="/admin/users/new">+ Create User</a>
+        <a class="button secondary" href="/admin/sessions">Refresh</a>
       </section>
 
       <div class="message success" th:if="${success}" th:text="${success}"></div>
       <div class="message error" th:if="${error}">
         <span th:text="${error}"></span>
-        <span th:if="${errorCode}"> - </span>
-        <strong th:if="${errorCode}" th:text="${errorCode}"></strong>
       </div>
 
       <section class="workspace-grid">
         <div class="panel">
           <div class="panel-header">
-            <div class="panel-title">All Users</div>
+            <div class="panel-title">Active Database Sessions</div>
             <div class="panel-tools">
-              <input class="search-input" id="userSearch" type="search" placeholder="Search users..." />
+              <input class="search-input" id="sessionSearch" type="search" placeholder="Search sessions..." />
             </div>
           </div>
 
@@ -524,56 +420,43 @@
             <table>
               <thead>
                 <tr>
+                  <th>SID, SERIAL#</th>
                   <th>Username</th>
-                  <th>Account Status</th>
-                  <th>Created Date</th>
-                  <th>Default Tablespace</th>
-                  <th>Temporary Tablespace</th>
-                  <th>Profile</th>
+                  <th>Status</th>
+                  <th>OS User</th>
+                  <th>Machine</th>
+                  <th>Program</th>
+                  <th>Logon Time</th>
                   <th>Actions</th>
                 </tr>
               </thead>
-              <tbody id="userTableBody">
-                <tr th:if="${#lists.isEmpty(users)}">
-                  <td colspan="7">
-                     <div class="empty-state">No users found.</div>
+              <tbody id="sessionTableBody">
+                <tr th:if="${#lists.isEmpty(sessionsList)}">
+                  <td colspan="8">
+                     <div class="empty-state">No active sessions found.</div>
                   </td>
                 </tr>
-                <tr th:each="user : ${users}"
-                  th:attr="data-search=${user.username + ' ' + user.accountStatus + ' ' + user.defaultTablespace + ' ' + user.profile}">
+                <tr th:each="sess : ${sessionsList}"
+                  th:attr="data-search=${sess.username + ' ' + sess.osUser + ' ' + sess.machine + ' ' + sess.program}">
                   <td>
-                    <a class="username" th:href="@{/admin/users/{username}(username=${user.username})}"
-                      th:text="${user.username}">APP_USER</a>
+                    <strong th:text="${sess.sid + ',' + sess.serialNum}">123,456</strong>
                   </td>
+                  <td th:text="${sess.username}">APP_USER</td>
                   <td>
-                    <span class="status" th:classappend="${user.locked} ? ' locked' : ' open'"
-                      th:text="${user.accountStatus}">OPEN</span>
+                    <span class="status" th:classappend="${sess.status == 'ACTIVE'} ? ' active' : ' inactive'"
+                      th:text="${sess.status}">ACTIVE</span>
                   </td>
-                  <td th:text="${user.created != null ? #dates.format(user.created, 'dd/MM/yyyy HH:mm') : '-'}">-</td>
-                  <td th:text="${user.defaultTablespace}">TS_USERS</td>
-                  <td th:text="${user.temporaryTablespace}">TEMP</td>
-                  <td th:text="${user.profile}">APP_PROFILE_USER</td>
+                  <td th:text="${sess.osUser}">administrator</td>
+                  <td th:text="${sess.machine}">WORKGROUP\PC-1</td>
+                  <td th:text="${sess.program}">JDBC Thin Client</td>
+                  <td th:text="${sess.logonTime != null ? #temporals.format(sess.logonTime, 'dd/MM/yyyy HH:mm:ss') : '-'}">-</td>
                   <td>
                     <div class="actions">
-                      <a class="button icon secondary" title="View / Edit" th:href="@{/admin/users/{username}(username=${user.username})}">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                      </a>
-                      
-                      <form th:if="${user.locked}" th:action="@{/admin/users/{username}/unlock(username=${user.username})}" method="post" style="display:inline;">
-                        <button class="button icon secondary" type="submit" title="Unlock User">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-                        </button>
-                      </form>
-                      
-                      <form th:unless="${user.locked}" th:action="@{/admin/users/{username}/lock(username=${user.username})}" method="post" style="display:inline;">
-                        <button class="button icon secondary" type="submit" title="Lock User">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                        </button>
-                      </form>
-                      
-                      <form th:action="@{/admin/users/{username}/delete(username=${user.username})}" method="post" onsubmit="return confirm('Delete this user?');" style="display:inline;">
-                        <button class="button icon danger" type="submit" title="Delete User">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      <form th:action="@{/admin/sessions/kill}" method="post" onsubmit="return confirm('WARNING: Are you sure you want to KILL this session? It will immediately disconnect the user and abort any running queries.');" style="display:inline;">
+                        <input type="hidden" name="sid" th:value="${sess.sid}">
+                        <input type="hidden" name="serialNum" th:value="${sess.serialNum}">
+                        <button class="button icon danger" type="submit" title="Kill Session">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
                         </button>
                       </form>
                     </div>
@@ -587,56 +470,14 @@
     </main>
   </div>
 
-
-
-
   <script>
-    const openButtons = document.querySelectorAll("[data-open-modal]");
-    const closeButtons = document.querySelectorAll("[data-close-modal]");
-    const modals = document.querySelectorAll(".modal");
-    const userSearch = document.getElementById("userSearch");
-    const userRows = document.querySelectorAll("#userTableBody tr[data-search]");
+    const sessionSearch = document.getElementById("sessionSearch");
+    const sessionRows = document.querySelectorAll("#sessionTableBody tr[data-search]");
 
-    openButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const modal = document.getElementById(button.dataset.openModal);
-        if (!modal) return;
-
-        if (modal.id === "editUserModal") {
-          document.getElementById("editUsername").value = button.dataset.username || "";
-          document.getElementById("editDefaultTablespace").value = button.dataset.defaultTablespace || "";
-          document.getElementById("editTemporaryTablespace").value = button.dataset.temporaryTablespace || "";
-          document.getElementById("editProfile").value = button.dataset.profile || "";
-          document.getElementById("editNewPassword").value = "";
-        }
-
-        modal.classList.add("open");
-        modal.setAttribute("aria-hidden", "false");
-      });
-    });
-
-    closeButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const modal = button.closest(".modal");
-        if (!modal) return;
-        modal.classList.remove("open");
-        modal.setAttribute("aria-hidden", "true");
-      });
-    });
-
-    modals.forEach((modal) => {
-      modal.addEventListener("click", (event) => {
-        if (event.target === modal) {
-          modal.classList.remove("open");
-          modal.setAttribute("aria-hidden", "true");
-        }
-      });
-    });
-
-    if (userSearch) {
-      userSearch.addEventListener("input", () => {
-        const keyword = userSearch.value.trim().toLowerCase();
-        userRows.forEach((row) => {
+    if (sessionSearch) {
+      sessionSearch.addEventListener("input", () => {
+        const keyword = sessionSearch.value.trim().toLowerCase();
+        sessionRows.forEach((row) => {
           const searchable = (row.dataset.search || "").toLowerCase();
           row.classList.toggle("hidden", keyword.length > 0 && !searchable.includes(keyword));
         });

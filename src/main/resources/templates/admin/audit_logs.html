@@ -39,6 +39,7 @@
     .button { align-items: center; border: 1px solid transparent; border-radius: 4px; cursor: pointer; display: inline-flex; gap: 7px; justify-content: center; min-height: 34px; padding: 7px 12px; text-decoration: none; white-space: nowrap; }
     .button.primary { background: #2c65c8; border-color: #1f55b0; color: #fff; }
     .button.secondary { background: #e7e9ed; border-color: #babfc7; color: #171a1f; }
+    .button.success { background: #1e8449; border-color: #186a3b; color: #fff; }
 
     /* ── Messages ── */
     .message { border-radius: 4px; margin-bottom: 14px; padding: 10px 12px; }
@@ -107,6 +108,25 @@
 
     /* ── Filter input (date) ── */
     .filter-input { background: #fff; border: 1px solid #aeb4bd; border-radius: 4px; color: #101214; height: 34px; padding: 5px 10px; }
+
+    /* ── Modal ── */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+    .modal { background: #fff; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 450px; max-width: 90vw; overflow: hidden; transform: translateY(-20px); transition: transform 0.2s; }
+    .modal-overlay.active .modal { transform: translateY(0); }
+    .modal-header { padding: 16px 20px; border-bottom: 1px solid #e0e3e7; background: #fff; color: #171a1f; font-weight: 700; font-size: 18px; }
+    .modal-body { padding: 20px; color: #3d444d; line-height: 1.5; }
+    .modal-footer { padding: 14px 20px; border-top: 1px solid #e0e3e7; background: #f7f8f9; display: flex; justify-content: flex-end; gap: 10px; }
+    .btn-danger { background: #c0392b; border-color: #922b21; color: #fff; }
+    .btn-danger:disabled { background: #e6b0aa; border-color: #d98880; cursor: not-allowed; }
+    .checkbox-group { margin-top: 15px; display: flex; gap: 8px; align-items: flex-start; }
+
+    /* ── Toast ── */
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
+    .toast { background: #fff; border-left: 4px solid #2c65c8; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 12px 16px; border-radius: 4px; min-width: 250px; transform: translateX(120%); transition: transform 0.3s; }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left-color: #1e8449; }
+    .toast.error { border-left-color: #b03a2e; }
   </style>
 </head>
 
@@ -127,6 +147,7 @@
         <a class="nav-item" href="/admin/roles"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span><span>Role Management</span></a>
         <a class="nav-item" href="/admin/profiles"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span>Profile Management</span></a>
         <a class="nav-item active" href="/admin/audit-logs"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></span><span>Audit Logs</span></a>
+        <a class="nav-item" href="/admin/sessions"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg></span><span>Session Management</span></a>
       </nav>
 
       <div class="sidebar-footer">
@@ -208,9 +229,14 @@
           </select>
         </div>
 
-        <div class="filter-actions">
-          <button type="submit" class="button primary">Apply Filter</button>
-          <a class="button secondary" th:href="@{/admin/audit-logs(tab=${activeTab})}">Reset</a>
+        <div class="filter-actions" style="width: 100%; display: flex; justify-content: space-between;">
+          <div style="display: flex; gap: 8px;">
+            <button type="submit" class="button primary">Apply Filter</button>
+            <a class="button secondary" th:href="@{/admin/audit-logs(tab=${activeTab})}">Reset</a>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="button success" onclick="openExportModal()">Export CSV</button>
+          </div>
         </div>
       </form>
 
@@ -306,6 +332,136 @@
       </div>
     </main>
   </div>
+
+  <!-- Modal Xác nhận Export -->
+  <div class="modal-overlay" id="exportModal">
+    <div class="modal">
+      <div class="modal-header">
+        Export Report Confirmation
+      </div>
+      <div class="modal-body">
+        You are about to export Audit records based on the current filter:
+        <br><br>
+        <div style="background: #f7f8f9; padding: 10px; border-radius: 4px; border: 1px solid #e0e3e7; margin-bottom: 15px;">
+          <div><strong>Date Range:</strong> <span id="exportModalDateRange" style="color: #2c65c8;">All time</span></div>
+          <div style="margin-top: 5px;"><strong>User Filter:</strong> <span id="exportModalUserRange" style="color: #2c65c8;">All</span></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="button secondary" onclick="closeExportModal()">Cancel</button>
+        <button class="button success" onclick="exportData('export')">Confirm Export</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    function openExportModal() {
+      const dateFrom = document.querySelector('input[name="dateFrom"]').value;
+      const dateTo = document.querySelector('input[name="dateTo"]').value;
+      const username = document.querySelector('select[name="username"]').value;
+
+      let dateText = "All time";
+      if (dateFrom && dateTo) {
+          dateText = `From ${dateFrom} to ${dateTo}`;
+      } else if (dateFrom) {
+          dateText = `From ${dateFrom} onwards`;
+      } else if (dateTo) {
+          dateText = `Up to ${dateTo}`;
+      }
+      
+      let userText = "All users (APP_%)";
+      if (username) {
+          userText = `User: ${username}`;
+      }
+
+      document.getElementById('exportModalDateRange').innerText = dateText;
+      document.getElementById('exportModalUserRange').innerText = userText;
+
+      document.getElementById('exportModal').classList.add('active');
+    }
+
+    function closeExportModal() {
+      document.getElementById('exportModal').classList.remove('active');
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerText = message;
+      container.appendChild(toast);
+      
+      // trigger animation
+      setTimeout(() => toast.classList.add('show'), 10);
+      
+      // auto remove
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+
+    function exportData(actionType) {
+      closeExportModal();
+      
+      const form = document.querySelector('.filter-bar');
+      const formData = new FormData(form);
+      const params = new URLSearchParams(formData);
+
+      const endpoint = '/api/admin/audit/export-job';
+      
+      params.set('auditType', params.get('tab'));
+      params.delete('tab');
+      params.delete('page');
+      params.delete('pageSize');
+
+      // Hiện loading
+      showToast('Processing data, please wait...', 'success');
+
+      fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params.toString()
+      })
+      .then(res => {
+        if (!res.ok) {
+          return res.json().then(data => { throw new Error(data.message || 'An error occurred'); });
+        }
+        
+        // Lấy filename từ header
+        let filename = 'audit_export.csv';
+        const disposition = res.headers.get('content-disposition');
+        if (disposition && disposition.indexOf('attachment') !== -1) {
+            var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+            var matches = filenameRegex.exec(disposition);
+            if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
+        }
+
+        return res.blob().then(blob => ({ blob, filename }));
+      })
+      .then(({ blob, filename }) => {
+        // Tạo link tải file ảo
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        
+        showToast('File downloaded successfully!', 'success');
+      })
+      .catch(err => {
+        showToast(err.message || 'Server connection error!', 'error');
+        console.error(err);
+      });
+    }
+  </script>
 </body>
 
 </html>

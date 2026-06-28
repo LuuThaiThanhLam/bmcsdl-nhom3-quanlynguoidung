@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manager - Hồ sơ phòng ban</title>
+    <th:block th:replace="~{manager/_layout :: styles}"></th:block>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside th:replace="~{manager/_layout :: sidebar('profiles')}"></aside>
+
+      <main class="main">
+        <section class="topbar">
+          <div class="page-title">
+            <span class="page-icon"
+              ><svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                width="18"
+                height="18"
+              >
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle></svg
+            ></span>
+            <div>
+              <h1>Quản lý Hồ sơ</h1>
+              <div class="subtitle">
+                VPD chỉ cho thấy hồ sơ
+                <strong
+                  th:text="${myDepartment != null ? 'phòng ' + myDepartment : 'cùng phòng ban'}"
+                  >cùng phòng ban</strong
+                >
+                &mdash; Email/SĐT người khác bị che
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div
+          class="message success"
+          th:if="${success}"
+          th:text="${success}"
+        ></div>
+        <div class="message error" th:if="${error}">
+          <span th:text="${error}"></span>
+          <strong
+            th:if="${errorCode}"
+            th:text="' [' + ${errorCode} + ']'"
+          ></strong>
+        </div>
+
+        <div class="info-note">
+          &#9432; Bạn chỉ sửa được <strong>4 trường cơ bản</strong> (Họ tên, Địa
+          chỉ, SĐT, Email) &mdash; không sửa được Phòng ban/Cấp bậc (RBAC giới
+          hạn cột). Nút
+          <span class="badge" style="background: #1e8449">&uarr; PRI</span> /
+          <span class="badge" style="background: #7f8c8d">&darr; PUB</span> để
+          nâng/hạ nhãn OLS.
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Danh sách Hồ sơ</div>
+            <div class="panel-tools">
+              <input
+                class="search-input"
+                id="searchInput"
+                type="search"
+                placeholder="Tìm theo tên/email/SĐT..."
+                oninput="filterRows()"
+              />
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="profileTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Họ tên</th>
+                  <th>Cấp bậc</th>
+                  <th>SĐT</th>
+                  <th>Email</th>
+                  <th>Nhãn OLS</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:if="${#lists.isEmpty(profiles)}">
+                  <td colspan="7">
+                    <div class="empty-state">
+                      Không có hồ sơ nào (VPD đã lọc theo phòng ban).
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  th:each="p : ${profiles}"
+                  th:attr="data-search=${p.fullName + ' ' + (p.email != null ? p.email : '') + ' ' + (p.phoneNumber != null ? p.phoneNumber : '')}"
+                >
+                  <td th:text="${p.userId}">2</td>
+                  <td><strong th:text="${p.fullName}">Tran Thi B</strong></td>
+                  <td>
+                    <span
+                      th:if="${p.roleLevel != null and p.roleLevel >= 2}"
+                      class="badge badge-mgr"
+                      >MGR</span
+                    >
+                    <span
+                      th:if="${p.roleLevel == null or p.roleLevel < 2}"
+                      class="badge badge-emp"
+                      >EMP</span
+                    >
+                  </td>
+                  <!-- Column masking: nếu NULL (bị che) hiện "(ẩn)" -->
+                  <td>
+                    <span
+                      th:if="${p.phoneNumber != null}"
+                      th:text="${p.phoneNumber}"
+                      >0912345678</span
+                    >
+                    <span th:if="${p.phoneNumber == null}" class="masked"
+                      >(ẩn)</span
+                    >
+                  </td>
+                  <td>
+                    <span th:if="${p.email != null}" th:text="${p.email}"
+                      ><a
+                        href="/cdn-cgi/l/email-protection"
+                        class="__cf_email__"
+                        data-cfemail="90f2bee4e2f1fed0f3fffde0f1fee9bef3fffd"
+                        >[email&#160;protected]</a
+                      ></span
+                    >
+                    <span th:if="${p.email == null}" class="masked">(ẩn)</span>
+                  </td>
+                  <td>
+                    <span
+                      th:if="${p.olsLabelText != null and #strings.startsWith(p.olsLabelText,'PRI')}"
+                      class="badge badge-pri"
+                      th:text="${p.olsLabelText}"
+                      >PRI:MGR:HR</span
+                    >
+                    <span
+                      th:if="${p.olsLabelText != null and #strings.startsWith(p.olsLabelText,'PUB')}"
+                      class="badge badge-pub"
+                      th:text="${p.olsLabelText}"
+                      >PUB:MGR:HR</span
+                    >
+                    <span
+                      th:if="${p.olsLabelText == null}"
+                      class="badge badge-none"
+                      >N/A</span
+                    >
+                  </td>
+                  <td>
+                    <div class="actions">
+                      <button
+                        class="button warning"
+                        type="button"
+                        th:attr="data-id=${p.userId},
+                                     data-fullname=${p.fullName},
+                                     data-address=${p.address},
+                                     data-phone=${p.phoneNumber},
+                                     data-email=${p.email}"
+                        onclick="openEdit(this)"
+                      >
+                        Sửa
+                      </button>
+
+                      <form
+                        th:if="${p.olsLabelText != null and #strings.startsWith(p.olsLabelText,'PUB')}"
+                        th:action="@{/manager/profiles/{id}/upgrade-label(id=${p.userId})}"
+                        method="post"
+                        style="display: inline"
+                      >
+                        <button
+                          class="button success"
+                          type="submit"
+                          title="Nâng lên PRIVATE"
+                        >
+                          &uarr; PRI
+                        </button>
+                      </form>
+                      <form
+                        th:if="${p.olsLabelText != null and #strings.startsWith(p.olsLabelText,'PRI')}"
+                        th:action="@{/manager/profiles/{id}/downgrade-label(id=${p.userId})}"
+                        method="post"
+                        style="display: inline"
+                      >
+                        <button
+                          class="button secondary"
+                          type="submit"
+                          title="Hạ về PUBLIC"
+                        >
+                          &darr; PUB
+                        </button>
+                      </form>
+
+                      <form
+                        th:action="@{/manager/profiles/{id}/delete(id=${p.userId})}"
+                        method="post"
+                        onsubmit="return confirm('Xóa hồ sơ này?');"
+                        style="display: inline"
+                      >
+                        <button class="button danger" type="submit">Xóa</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal sửa hồ sơ (4 cột cơ bản) -->
+    <div class="modal" id="editModal">
+      <div class="dialog">
+        <form action="/manager/profiles/update" method="post">
+          <div class="dialog-header">
+            <div class="dialog-title">Sửa thông tin cơ bản</div>
+            <button class="close-btn" type="button" onclick="closeEdit()">
+              &times;
+            </button>
+          </div>
+          <div class="dialog-body">
+            <div class="field">
+              <label>User ID</label><input id="e_id" name="userId" readonly />
+            </div>
+            <div class="field">
+              <label>Họ tên</label
+              ><input id="e_fullname" name="fullName" required />
+            </div>
+            <div class="field">
+              <label>Địa chỉ</label><input id="e_address" name="address" />
+            </div>
+            <div class="field">
+              <label>Số điện thoại</label
+              ><input id="e_phone" name="phoneNumber" />
+            </div>
+            <div class="field">
+              <label>Email</label
+              ><input id="e_email" name="email" type="email" />
+            </div>
+            <div style="font-size: 12px; color: #6b727c">
+              &#9432; Chỉ sửa 4 trường này. Phòng ban &amp; Cấp bậc không sửa
+              được (RBAC). Lưu ý: nếu dòng đang PRI, sau khi sửa vẫn giữ PRI
+              (hàm gán nhãn đã giữ level).
+            </div>
+          </div>
+          <div class="dialog-footer">
+            <button
+              class="button secondary"
+              type="button"
+              onclick="closeEdit()"
+            >
+              Hủy
+            </button>
+            <button class="button primary" type="submit">Lưu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script
+      data-cfasync="false"
+      src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"
+    ></script>
+    <script>
+      function openEdit(btn) {
+        document.getElementById("e_id").value =
+          btn.getAttribute("data-id") || "";
+        document.getElementById("e_fullname").value =
+          btn.getAttribute("data-fullname") || "";
+        document.getElementById("e_address").value =
+          btn.getAttribute("data-address") || "";
+        document.getElementById("e_phone").value =
+          btn.getAttribute("data-phone") || "";
+        document.getElementById("e_email").value =
+          btn.getAttribute("data-email") || "";
+        document.getElementById("editModal").classList.add("open");
+      }
+      function closeEdit() {
+        document.getElementById("editModal").classList.remove("open");
+      }
+      document
+        .getElementById("editModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) closeEdit();
+        });
+
+      function filterRows() {
+        var q = document
+          .getElementById("searchInput")
+          .value.toLowerCase()
+          .trim();
+        document
+          .querySelectorAll("#profileTable tbody tr[data-search]")
+          .forEach(function (row) {
+            var v = (row.getAttribute("data-search") || "").toLowerCase();
+            row.style.display = v.includes(q) ? "" : "none";
+          });
+      }
+    </script>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'a129912ee96203e7',t:'MTc4MjYxNjk0Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

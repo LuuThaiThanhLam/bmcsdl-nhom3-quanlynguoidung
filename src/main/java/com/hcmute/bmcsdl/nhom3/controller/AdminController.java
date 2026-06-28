@@ -9,6 +9,7 @@ import com.hcmute.bmcsdl.nhom3.service.AuditService;
 import java.util.List;
 import com.hcmute.bmcsdl.nhom3.service.ProfileManagementService;
 import com.hcmute.bmcsdl.nhom3.service.RoleManagermentService;
+import com.hcmute.bmcsdl.nhom3.service.SessionManagementService;
 import com.hcmute.bmcsdl.nhom3.service.UserManagermentService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
@@ -31,12 +32,18 @@ public class AdminController {
     private final RoleManagermentService roleService;
     private final ProfileManagementService profileService;
     private final AuditService auditService;
+    private final SessionManagementService sessionService;
 
-    public AdminController(UserManagermentService userManagermentService, RoleManagermentService roleService, ProfileManagementService profileService, AuditService auditService) {
+    public AdminController(UserManagermentService userManagermentService, 
+                           RoleManagermentService roleService, 
+                           ProfileManagementService profileService, 
+                           AuditService auditService,
+                           SessionManagementService sessionService) {
         this.userManagermentService = userManagermentService;
         this.roleService = roleService;
         this.profileService = profileService;
         this.auditService = auditService;
+        this.sessionService = sessionService;
     }
 
     @GetMapping("/dashboard")
@@ -67,12 +74,9 @@ public class AdminController {
             long unusedProfiles = totalProfiles - inUseProfiles;
 
             // Audit
-            // Audit — fetch up to 500 recent records for dashboard stats
-            List<AuditLogDTO> audits = auditService.getUnifiedAudit(session, null, null, null, 1, 500);
-            long totalAudits = audits.size();
-            long failedLogons = audits.stream().filter(a -> "LOGON".equalsIgnoreCase(a.getActionName()) && !"0".equals(a.getReturnCode())).count();
-            long activeUsers = audits.stream().map(AuditLogDTO::getDbUsername).filter(u -> u != null && !u.isBlank()).distinct().count();
-            long objectsAffected = audits.stream().filter(a -> a.getObjectName() != null && !a.getObjectName().isBlank()).count();
+            long unifiedAuditCount = auditService.countUnifiedAudit(session, null, null, null);
+            long fgaAuditCount = auditService.countFgaAudit(session, null, null, null);
+            long totalAudits = unifiedAuditCount + fgaAuditCount;
 
             model.addAttribute("userCount", totalUsers);
             model.addAttribute("openUsers", openUsers);
@@ -89,9 +93,8 @@ public class AdminController {
             model.addAttribute("unusedProfiles", unusedProfiles);
 
             model.addAttribute("auditCount", totalAudits);
-            model.addAttribute("failedLogons", failedLogons);
-            model.addAttribute("activeUsers", activeUsers);
-            model.addAttribute("objectsAffected", objectsAffected);
+            model.addAttribute("unifiedAuditCount", unifiedAuditCount);
+            model.addAttribute("fgaAuditCount", fgaAuditCount);
 
         } catch (Exception e) {
             model.addAttribute("userCount", 0);
@@ -110,6 +113,29 @@ public class AdminController {
 
         loadDashboardData(session, model);
         return "admin/users";
+    }
+
+    @GetMapping("/sessions")
+    public String sessions(HttpSession session, Model model) {
+        if (!isLoggedIn(session)) {
+            return "redirect:/";
+        }
+
+        try {
+            model.addAttribute("sessionsList", sessionService.getAllSessions(session));
+        } catch (Exception e) {
+            model.addAttribute("error", "Lỗi tải phiên kết nối: " + e.getMessage());
+        }
+        return "admin/sessions";
+    }
+
+    @PostMapping("/sessions/kill")
+    public String killSession(@RequestParam String sid, @RequestParam String serialNum, HttpSession session, RedirectAttributes redirectAttributes) {
+        if (!isLoggedIn(session)) {
+            return "redirect:/";
+        }
+        return runAction(redirectAttributes, "Đã ngắt kết nối phiên làm việc " + sid + "," + serialNum + " thành công!", 
+            () -> sessionService.killSession(session, sid, serialNum), "/admin/sessions");
     }
 
     @GetMapping("/users/new")

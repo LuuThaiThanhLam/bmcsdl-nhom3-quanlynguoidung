@@ -63,5 +63,11 @@ END;
 /
 
 PROMPT ========================================================================
+PROMPT PHAN 3: CAP QUYEN QUAN LY AUDIT CHO ADMIN
+PROMPT ========================================================================
+-- Cấp quyền cho APP_DBA_ADMIN để có thể thực thi lệnh xóa (Purge) Audit Logs từ ứng dụng
+GRANT EXECUTE ON DBMS_AUDIT_MGMT TO APP_DBA_ADMIN;
+
+PROMPT ========================================================================
 PROMPT KET THUC CAU HINH AUDITING
 PROMPT ========================================================================
