@@ -15,7 +15,7 @@ YÊU CẦU:
 
 SET SERVEROUTPUT ON;
 -- Kết nối bằng tài khoản SYS để cấu hình Audit
--- DEFINE SYS_CONN = "SYS/your_sys_password AS SYSDBA"
+DEFINE SYS_CONN = "SYS/1234567 AS SYSDBA"
 -- CONNECT &SYS_CONN
 
 PROMPT ========================================================================
