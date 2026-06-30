@@ -6,7 +6,7 @@ DO AN: Xay dung ung dung web co chuc nang quan ly nguoi dung
 PHAN BAO MAT: Oracle Label Security tren bang APP_TABLE.USER_PROFILE
 
 PHU THUOC
-  - Da chay 01_RBAC_Admin_Functions.sql.
+  - Da chay 01_RBAC_Admin_FunctioUSER_PROFILE_OLSns.sql.
   - Nen chay 02_VPD_BaoMat_UserProfile.sql truoc de du quy trinh RBAC -> VPD -> OLS.
   - Database da cai va enable Oracle Label Security.
 
