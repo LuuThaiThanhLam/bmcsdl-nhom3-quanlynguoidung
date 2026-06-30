@@ -35,7 +35,7 @@ HUONG DAN CHAY
 
 LUU Y KHI CHAY LAI
   - Neu da tung chay file nay, cac lenh CREATE USER/ROLE/TABLESPACE co the bao object da ton tai.
-  - Khi do co the xoa object cu truoc, hoac bo qua loi da ton tai neu object da dung.
+  - Khi do co the xoa object cu truoc, hoac chay file cleanup roi chay lai.
   - File nay uu tien code de doc/de demo, khong uu tien viet thanh procedure an ben trong DB.
 ================================================================================
 */
@@ -44,8 +44,7 @@ SET SERVEROUTPUT ON;
 SET DEFINE ON;
 
 -- ============================================================================
--- SUA CAC BIEN KET NOI O DAY NEU DUNG SQL*Plus/SQLcl HOAC SQL Developer F5
--- Vi du: DEFINE SYS_CONN = "SYS/oracle@FREEPDB1 AS SYSDBA"
+-- SUA CAC BIEN KET NOI O DAY
 -- ============================================================================
 DEFINE SYS_CONN              = "SYS/123@//localhost:1521/FREEPDB1 AS SYSDBA"
 DEFINE APP_DBA_ADMIN_CONN    = "APP_DBA_ADMIN/123456@//localhost:1521/FREEPDB1"
@@ -55,22 +54,16 @@ DEFINE APP_USER_1_CONN       = "APP_USER_1/123456@//localhost:1521/FREEPDB1"
 PROMPT ========================================================================
 PROMPT PHASE 1 - CONNECT SYS: tao tablespace, role, profile, user, grant quyen
 PROMPT ========================================================================
+
 CONNECT &SYS_CONN
 
 -- ----------------------------------------------------------------------------
 -- 1. BAT RESOURCE_LIMIT
---    Can bat de cac gioi han trong PROFILE nhu SESSIONS_PER_USER, CONNECT_TIME,
---    IDLE_TIME co hieu luc.
 -- ----------------------------------------------------------------------------
 ALTER SYSTEM SET RESOURCE_LIMIT = TRUE;
 
 -- ----------------------------------------------------------------------------
 -- 2. TAO TABLESPACE
---    TS_ADMIN : luu schema/user quan tri.
---    TS_DATA  : luu bang du lieu ung dung.
---    TS_USERS : luu user thuong/demo.
---
---    Neu chay lai va bao tablespace da ton tai, co the bo qua neu tablespace da dung.
 -- ----------------------------------------------------------------------------
 CREATE TABLESPACE TS_ADMIN
   DATAFILE 'ts_admin.dbf'
@@ -86,7 +79,6 @@ CREATE TABLESPACE TS_USERS
 
 -- ----------------------------------------------------------------------------
 -- 3. TAO ROLE RBAC
---    Mỗi role dai dien cho mot nhom chuc nang trong ung dung web.
 -- ----------------------------------------------------------------------------
 CREATE ROLE APP_ROLE_DB_ADMIN;
 CREATE ROLE APP_ROLE_SYSTEM_ADMIN;
@@ -95,13 +87,14 @@ CREATE ROLE APP_ROLE_TABLE_MGR;
 CREATE ROLE APP_ROLE_OLS_MGR;
 CREATE ROLE APP_ROLE_USER;
 
--- Role co password de demo tinh nang role bao ve bang password.
+-- Role co password de demo role password
 CREATE ROLE APP_ROLE_SECURE IDENTIFIED BY rolepass123;
 
 -- ----------------------------------------------------------------------------
 -- 4. GAN SYSTEM PRIVILEGE CHO ROLE
 -- ----------------------------------------------------------------------------
--- DB Admin: co quyen quan tri user/role/profile va xem metadata can thiet.
+
+-- DB Admin
 GRANT CREATE SESSION TO APP_ROLE_DB_ADMIN;
 GRANT CREATE USER, ALTER USER, DROP USER TO APP_ROLE_DB_ADMIN WITH ADMIN OPTION;
 GRANT CREATE ROLE, ALTER ANY ROLE, DROP ANY ROLE, GRANT ANY ROLE TO APP_ROLE_DB_ADMIN WITH ADMIN OPTION;
@@ -112,14 +105,11 @@ GRANT GRANT ANY PRIVILEGE TO APP_ROLE_DB_ADMIN WITH ADMIN OPTION;
 GRANT GRANT ANY OBJECT PRIVILEGE TO APP_ROLE_DB_ADMIN WITH ADMIN OPTION;
 GRANT SELECT_CATALOG_ROLE TO APP_ROLE_DB_ADMIN;
 
--- System Admin: user quan tri he thong ung dung, chu yeu xem thong tin.
+-- System Admin
 GRANT CREATE SESSION TO APP_ROLE_SYSTEM_ADMIN;
 GRANT SELECT ANY TABLE TO APP_ROLE_SYSTEM_ADMIN;
 
--- Table Manager: schema APP_TABLE tao bang/view/trigger/function cho VPD/OLS.
--- Oracle dung privilege CREATE PROCEDURE cho ca procedure, function va package.
--- File Admin nay khong tao stored procedure admin, nhung APP_TABLE can privilege nay
--- de file 02 tao function VPD va file 03 tao function/logic OLS neu can.
+-- Table Manager (APP_TABLE)
 GRANT CREATE SESSION TO APP_ROLE_TABLE_MGR;
 GRANT CREATE TABLE, CREATE SEQUENCE, CREATE TRIGGER, CREATE VIEW, CREATE PROCEDURE TO APP_ROLE_TABLE_MGR;
 GRANT ALTER ANY TABLE, DROP ANY TABLE TO APP_ROLE_TABLE_MGR;
@@ -127,7 +117,7 @@ GRANT SELECT ANY TABLE, INSERT ANY TABLE, UPDATE ANY TABLE, DELETE ANY TABLE TO 
 GRANT EXECUTE ON SYS.DBMS_RLS TO APP_ROLE_TABLE_MGR;
 GRANT EXEMPT ACCESS POLICY TO APP_ROLE_TABLE_MGR;
 
--- Profile Manager va user thuong.
+-- Profile Manager, OLS Manager, User thuong
 GRANT CREATE SESSION TO APP_ROLE_PROFILE_MGR;
 GRANT CREATE SESSION TO APP_ROLE_OLS_MGR;
 GRANT CREATE SESSION TO APP_ROLE_USER;
@@ -226,13 +216,11 @@ GRANT APP_ROLE_USER         TO APP_USER_3;
 GRANT APP_ROLE_OLS_MGR      TO APP_OLS_MGR;
 GRANT APP_ROLE_USER         TO APP_USER_DEMO;
 
--- Khoa user demo de co tinh huong mo khoa tai man hinh Admin.
+-- Khoa user demo de co tinh huong mo khoa tai man hinh Admin
 ALTER USER APP_USER_DEMO ACCOUNT LOCK;
 
 -- ----------------------------------------------------------------------------
 -- 8. GAN QUYEN TRUC TIEP CHO APP_DBA_ADMIN
---    Phan Admin khong dung procedure, nhung user APP_DBA_ADMIN can quyen truc tiep
---    de chay cac lenh CREATE USER, ALTER USER, GRANT ROLE, REVOKE ROLE.
 -- ----------------------------------------------------------------------------
 GRANT CREATE SESSION TO APP_DBA_ADMIN;
 GRANT UNLIMITED TABLESPACE TO APP_DBA_ADMIN;
@@ -241,56 +229,60 @@ GRANT CREATE ROLE, ALTER ANY ROLE, DROP ANY ROLE, GRANT ANY ROLE TO APP_DBA_ADMI
 GRANT CREATE PROFILE, ALTER PROFILE, DROP PROFILE TO APP_DBA_ADMIN;
 GRANT SELECT ANY DICTIONARY TO APP_DBA_ADMIN;
 
--- Quyen truc tiep cho APP_TABLE de file 02 tao/xoa VPD policy va tao function VPD.
+-- Quyen cho APP_TABLE de tao VPD/OLS
 GRANT CREATE SESSION TO APP_TABLE;
 GRANT CREATE TABLE, CREATE SEQUENCE, CREATE TRIGGER, CREATE VIEW, CREATE PROCEDURE TO APP_TABLE;
 GRANT EXECUTE ON SYS.DBMS_RLS TO APP_TABLE;
 
--- Quyen xem dictionary cho APP_DBA_ADMIN de demo bao cao Admin.
-GRANT SELECT ON SYS.DBA_USERS      TO APP_DBA_ADMIN;
-GRANT SELECT ON SYS.DBA_ROLE_PRIVS TO APP_DBA_ADMIN;
-GRANT SELECT ON SYS.DBA_SYS_PRIVS  TO APP_DBA_ADMIN;
-GRANT SELECT ON SYS.DBA_PROFILES   TO APP_DBA_ADMIN;
-GRANT SELECT ON SYS.DBA_OBJECTS    TO APP_DBA_ADMIN;
-GRANT SELECT ON SYS.DBA_TAB_PRIVS  TO APP_DBA_ADMIN;
-GRANT SELECT ON SYS.DBA_COL_PRIVS  TO APP_DBA_ADMIN;
+-- Quyen xem dictionary cho app admin
+GRANT SELECT ON SYS.DBA_USERS       TO APP_DBA_ADMIN;
+GRANT SELECT ON SYS.DBA_ROLE_PRIVS  TO APP_DBA_ADMIN;
+GRANT SELECT ON SYS.DBA_SYS_PRIVS   TO APP_DBA_ADMIN;
+GRANT SELECT ON SYS.DBA_PROFILES    TO APP_DBA_ADMIN;
+GRANT SELECT ON SYS.DBA_OBJECTS     TO APP_DBA_ADMIN;
+GRANT SELECT ON SYS.DBA_TAB_PRIVS   TO APP_DBA_ADMIN;
+GRANT SELECT ON SYS.DBA_COL_PRIVS   TO APP_DBA_ADMIN;
 
--- Cấp quyền thêm cho phần audit và kill session
+-- Cap them quyen de quan ly audit va session
 GRANT EXECUTE ON DBMS_AUDIT_MGMT TO APP_DBA_ADMIN;
 GRANT ALTER SYSTEM TO APP_DBA_ADMIN;
 
 PROMPT ========================================================================
 PROMPT PHASE 2 - CONNECT APP_TABLE: tao bang du lieu mau va view
 PROMPT ========================================================================
+
 CONNECT &APP_TABLE_CONN
 
 -- ----------------------------------------------------------------------------
--- 9. TAO BANG USER_PROFILE
---    USERNAME   : dung cho VPD de loc theo user dang login.
---    DEPARTMENT : dung cho VPD/OLS de loc theo phong ban.
---
---    XOA BANG/SEQUENCE CU NEU DA CHAY TRUOC (de chay lai sach, tao dung schema moi).
---    Bo qua loi neu object chua ton tai (ORA-00942 / ORA-02289).
+-- 9. XOA OBJECT CU NEU DA CHAY TRUOC
 -- ----------------------------------------------------------------------------
 BEGIN
   EXECUTE IMMEDIATE 'DROP TABLE USER_DEPT_MAP CASCADE CONSTRAINTS';
 EXCEPTION
-  WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF;
-END;
-/
-BEGIN
-  EXECUTE IMMEDIATE 'DROP TABLE USER_PROFILE CASCADE CONSTRAINTS';
-EXCEPTION
-  WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF;
-END;
-/
-BEGIN
-  EXECUTE IMMEDIATE 'DROP SEQUENCE USER_PROFILE_SEQ';
-EXCEPTION
-  WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF;
+  WHEN OTHERS THEN
+    IF SQLCODE != -942 THEN RAISE; END IF;
 END;
 /
 
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE USER_PROFILE CASCADE CONSTRAINTS';
+EXCEPTION
+  WHEN OTHERS THEN
+    IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE 'DROP SEQUENCE USER_PROFILE_SEQ';
+EXCEPTION
+  WHEN OTHERS THEN
+    IF SQLCODE != -2289 THEN RAISE; END IF;
+END;
+/
+
+-- ----------------------------------------------------------------------------
+-- 10. TAO BANG USER_PROFILE
+-- ----------------------------------------------------------------------------
 CREATE TABLE USER_PROFILE (
   USER_ID      NUMBER PRIMARY KEY,
   FULL_NAME    VARCHAR2(100) NOT NULL,
@@ -304,10 +296,8 @@ CREATE TABLE USER_PROFILE (
   UPDATED_AT   DATE
 );
 
--- Sequence dung cho ung dung web khi them user profile moi.
 CREATE SEQUENCE USER_PROFILE_SEQ START WITH 100 INCREMENT BY 1 NOCACHE;
 
--- Trigger chi de cap nhat UPDATED_AT khi sua ho so, khong phai procedure Admin.
 CREATE OR REPLACE TRIGGER TRG_USER_PROFILE_UPD_AT
 BEFORE UPDATE ON USER_PROFILE
 FOR EACH ROW
@@ -317,10 +307,8 @@ END;
 /
 
 -- ----------------------------------------------------------------------------
--- 10. THEM DU LIEU MAU
---    ROLE_LEVEL: 2 = quan ly (MGR), 1 = nhan vien (EMP).
---    USERNAME moi dong = chu nhan ho so (dung cho column masking o file 03).
---    USERNAME chi la chuoi demo, khong can tao user Oracle that cho tung dong.
+-- 11. THEM DU LIEU MAU
+-- ROLE_LEVEL: 2 = manager, 1 = employee
 -- ----------------------------------------------------------------------------
 INSERT INTO USER_PROFILE
   (USER_ID, FULL_NAME, ADDRESS, PHONE_NUMBER, EMAIL, DEPARTMENT, ROLE_LEVEL, USERNAME)
@@ -365,23 +353,22 @@ VALUES
 COMMIT;
 
 -- ----------------------------------------------------------------------------
--- 10b. TAO BANG PHU USER_DEPT_MAP
---      Anh xa USERNAME manager -> DEPARTMENT. Bang nay KHONG bi VPD bao ve
---      nen function VPD tra cuu o day se khong bi de quy (Cach A).
+-- 12. TAO BANG PHU USER_DEPT_MAP
 -- ----------------------------------------------------------------------------
 CREATE TABLE USER_DEPT_MAP (
-  USERNAME    VARCHAR2(128) PRIMARY KEY,
-  DEPARTMENT  VARCHAR2(50) NOT NULL
+  USERNAME   VARCHAR2(128) PRIMARY KEY,
+  DEPARTMENT VARCHAR2(50) NOT NULL
 );
 
 INSERT INTO USER_DEPT_MAP (USERNAME, DEPARTMENT) VALUES ('APP_MANAGER_PROFILE', 'HR');
 INSERT INTO USER_DEPT_MAP (USERNAME, DEPARTMENT) VALUES ('APP_MANAGER_SALES',   'SALES');
+INSERT INTO USER_DEPT_MAP (USERNAME, DEPARTMENT) VALUES ('APP_USER_1',          'SALES');
+INSERT INTO USER_DEPT_MAP (USERNAME, DEPARTMENT) VALUES ('APP_USER_3',          'SALES');
 
 COMMIT;
 
 -- ----------------------------------------------------------------------------
--- 11. TAO VIEW CHO USER THUONG
---    View chi tra ve thong tin co ban, khong lo dia chi/sdt/email.
+-- 13. TAO VIEW CHO USER THUONG
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW VIEW_USER_BASIC_INFO AS
 SELECT DISTINCT FULL_NAME, DEPARTMENT
@@ -389,8 +376,7 @@ FROM USER_PROFILE;
 /
 
 -- ----------------------------------------------------------------------------
--- 12. GRANT OBJECT PRIVILEGES THEO RBAC
---    File 02 se grant bo sung SELECT/UPDATE/DELETE tren USER_PROFILE de demo VPD.
+-- 14. GRANT OBJECT PRIVILEGES THEO RBAC
 -- ----------------------------------------------------------------------------
 GRANT SELECT, INSERT, UPDATE, DELETE ON USER_PROFILE TO APP_ROLE_DB_ADMIN;
 GRANT SELECT ON USER_PROFILE TO APP_ROLE_SYSTEM_ADMIN;
@@ -399,17 +385,17 @@ GRANT SELECT ON USER_DEPT_MAP TO APP_ROLE_PROFILE_MGR;
 GRANT SELECT ON VIEW_USER_BASIC_INFO TO APP_ROLE_PROFILE_MGR;
 GRANT SELECT ON VIEW_USER_BASIC_INFO TO APP_ROLE_USER;
 
--- APP_DBA_ADMIN co GRANT OPTION de cap lai object privilege neu can demo Admin.
-GRANT SELECT, INSERT, UPDATE, DELETE ON USER_ PROFILE TO APP_DBA_ADMIN WITH GRANT OPTION;
+GRANT SELECT, INSERT, UPDATE, DELETE ON USER_PROFILE TO APP_DBA_ADMIN WITH GRANT OPTION;
 GRANT SELECT ON VIEW_USER_BASIC_INFO TO APP_DBA_ADMIN WITH GRANT OPTION;
 
 PROMPT ========================================================================
 PROMPT PHASE 3 - CONNECT APP_DBA_ADMIN: demo chuc nang Admin bang SQL truc tiep
 PROMPT ========================================================================
+
 CONNECT &APP_DBA_ADMIN_CONN
 
 -- ----------------------------------------------------------------------------
--- 13. DEMO ADMIN - XEM DANH SACH USER APP_*
+-- 15. DEMO ADMIN - XEM DANH SACH USER APP_*
 -- ----------------------------------------------------------------------------
 SELECT USERNAME, ACCOUNT_STATUS, DEFAULT_TABLESPACE, TEMPORARY_TABLESPACE, PROFILE
 FROM DBA_USERS
@@ -417,10 +403,7 @@ WHERE USERNAME LIKE 'APP_%'
 ORDER BY USERNAME;
 
 -- ----------------------------------------------------------------------------
--- 14. DEMO ADMIN - TAO USER MOI
---     Day la code SQL binh thuong, khong goi procedure/package nao.
---     Neu APP_WEB_TEST da ton tai do lan chay truoc, chay lenh sau truoc:
---       DROP USER APP_WEB_TEST CASCADE;
+-- 16. DEMO ADMIN - TAO USER MOI
 -- ----------------------------------------------------------------------------
 CREATE USER APP_WEB_TEST IDENTIFIED BY "123456"
   DEFAULT TABLESPACE TS_USERS
@@ -439,7 +422,7 @@ FROM DBA_ROLE_PRIVS
 WHERE GRANTEE = 'APP_WEB_TEST';
 
 -- ----------------------------------------------------------------------------
--- 15. DEMO ADMIN - KHOA USER
+-- 17. DEMO ADMIN - KHOA USER
 -- ----------------------------------------------------------------------------
 ALTER USER APP_WEB_TEST ACCOUNT LOCK;
 
@@ -448,7 +431,7 @@ FROM DBA_USERS
 WHERE USERNAME = 'APP_WEB_TEST';
 
 -- ----------------------------------------------------------------------------
--- 16. DEMO ADMIN - MO KHOA USER
+-- 18. DEMO ADMIN - MO KHOA USER
 -- ----------------------------------------------------------------------------
 ALTER USER APP_WEB_TEST ACCOUNT UNLOCK;
 
@@ -457,12 +440,12 @@ FROM DBA_USERS
 WHERE USERNAME = 'APP_WEB_TEST';
 
 -- ----------------------------------------------------------------------------
--- 17. DEMO ADMIN - RESET PASSWORD
+-- 19. DEMO ADMIN - RESET PASSWORD
 -- ----------------------------------------------------------------------------
 ALTER USER APP_WEB_TEST IDENTIFIED BY "123456";
 
 -- ----------------------------------------------------------------------------
--- 18. DEMO ADMIN - GAN THEM ROLE CHO USER
+-- 20. DEMO ADMIN - GAN THEM ROLE CHO USER
 -- ----------------------------------------------------------------------------
 GRANT APP_ROLE_SECURE TO APP_WEB_TEST;
 
@@ -472,7 +455,7 @@ WHERE GRANTEE = 'APP_WEB_TEST'
 ORDER BY GRANTED_ROLE;
 
 -- ----------------------------------------------------------------------------
--- 19. DEMO ADMIN - THU HOI ROLE
+-- 21. DEMO ADMIN - THU HOI ROLE
 -- ----------------------------------------------------------------------------
 REVOKE APP_ROLE_SECURE FROM APP_WEB_TEST;
 
@@ -482,7 +465,7 @@ WHERE GRANTEE = 'APP_WEB_TEST'
 ORDER BY GRANTED_ROLE;
 
 -- ----------------------------------------------------------------------------
--- 20. DEMO ADMIN - DOI PROFILE CHO USER
+-- 22. DEMO ADMIN - DOI PROFILE CHO USER
 -- ----------------------------------------------------------------------------
 ALTER USER APP_WEB_TEST PROFILE APP_PROFILE_DEFAULT;
 
@@ -490,11 +473,10 @@ SELECT USERNAME, PROFILE
 FROM DBA_USERS
 WHERE USERNAME = 'APP_WEB_TEST';
 
--- Doi lai profile user de demo day du quy trinh.
 ALTER USER APP_WEB_TEST PROFILE APP_PROFILE_USER;
 
 -- ----------------------------------------------------------------------------
--- 21. DEMO ADMIN - XOA USER DEMO
+-- 23. DEMO ADMIN - XOA USER DEMO
 -- ----------------------------------------------------------------------------
 DROP USER APP_WEB_TEST CASCADE;
 
@@ -503,7 +485,7 @@ FROM DBA_USERS
 WHERE USERNAME = 'APP_WEB_TEST';
 
 -- ----------------------------------------------------------------------------
--- 22. CAC CAU LENH KIEM TRA CHO BAO CAO/DEMO WEB ADMIN
+-- 24. CAC CAU LENH KIEM TRA CHO BAO CAO / DEMO WEB ADMIN
 -- ----------------------------------------------------------------------------
 PROMPT ===== KIEM TRA USER APP_* =====
 SELECT USERNAME, ACCOUNT_STATUS, DEFAULT_TABLESPACE, TEMPORARY_TABLESPACE, PROFILE
@@ -532,15 +514,10 @@ ORDER BY PROFILE, RESOURCE_NAME;
 PROMPT ========================================================================
 PROMPT PHASE 4 - CONNECT APP_USER_1: demo user thuong chi xem view co ban
 PROMPT ========================================================================
+
 CONNECT &APP_USER_1_CONN
 
--- User thuong duoc xem view basic info theo RBAC.
 SELECT * FROM APP_TABLE.VIEW_USER_BASIC_INFO ORDER BY FULL_NAME;
-
--- Cau lenh duoi day du kien bi loi ORA-00942 trong file 01 vi APP_ROLE_USER
--- chua duoc grant SELECT truc tiep tren USER_PROFILE.
--- File 02 se grant SELECT/UPDATE va dung VPD de loc dong.
--- SELECT * FROM APP_TABLE.USER_PROFILE;
 
 PROMPT ========================================================================
 PROMPT KET THUC LAB 01 - TIEP THEO CHAY FILE 02_VPD_BaoMat_UserProfile.sql
