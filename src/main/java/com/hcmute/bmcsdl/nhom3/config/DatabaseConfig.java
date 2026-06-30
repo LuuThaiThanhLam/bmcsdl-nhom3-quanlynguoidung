@@ -39,4 +39,14 @@ public class DatabaseConfig {
             return ds;
         });
     }
+
+    public static DataSource createFreshDataSource(String username, String password) {
+        SingleConnectionDataSource ds = new SingleConnectionDataSource();
+        ds.setDriverClassName("oracle.jdbc.OracleDriver");
+        ds.setUrl("jdbc:oracle:thin:@localhost:1521/FREEPDB1");
+        ds.setUsername(username);
+        ds.setPassword(password);
+        ds.setSuppressClose(false);
+        return ds;
+    }
 }

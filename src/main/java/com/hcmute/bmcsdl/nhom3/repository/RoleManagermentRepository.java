@@ -65,6 +65,7 @@ public class RoleManagermentRepository {
                 SELECT OWNER, TABLE_NAME AS OBJECT_NAME, PRIVILEGE, GRANTABLE
                 FROM DBA_TAB_PRIVS
                 WHERE GRANTEE = ?
+                  AND TABLE_NAME NOT LIKE 'BIN$%'
                 ORDER BY TABLE_NAME, PRIVILEGE
                 """;
 
@@ -207,11 +208,35 @@ public class RoleManagermentRepository {
         jdbc(adminUsername, adminPassword).execute("GRANT %s(%s) ON %s.%s TO %s".formatted(privilege, colsJoined, normalizedOwner, normalizedTable, normalizedRoleName));
     }
 
-    public void revokeColPrivilege(String adminUsername, String adminPassword, String roleName, String owner, String tableName, String privilege) {
-        // In Oracle, you cannot revoke a column-specific privilege. You have to revoke the object privilege entirely.
-        // However, we will provide a standard REVOKE statement, which usually requires revoking the whole privilege on the table.
-        // For simplicity and matching standard UI, we'll execute the table revoke.
-        revokeTabPrivilege(adminUsername, adminPassword, roleName, owner, tableName, privilege);
+    public void revokeColPrivilege(String adminUsername, String adminPassword, String roleName, String owner, String tableName, String columnName, String privilege) {
+        String normalizedRoleName = normalizeAppRole(roleName);
+        String normalizedOwner = normalizeIdentifier(owner);
+        String normalizedTable = normalizeIdentifier(tableName);
+        String normalizedColumn = normalizeIdentifier(columnName);
+        String normalizedPrivilege = normalizeIdentifier(privilege);
+        JdbcTemplate jdbcTemplate = jdbc(adminUsername, adminPassword);
+        List<String> remainingColumns = findGrantedColumnsForPrivilege(jdbcTemplate, normalizedRoleName, normalizedOwner, normalizedTable, normalizedPrivilege).stream()
+                .filter(column -> !column.equals(normalizedColumn))
+                .toList();
+
+        jdbcTemplate.execute("REVOKE %s ON %s.%s FROM %s".formatted(normalizedPrivilege, normalizedOwner, normalizedTable, normalizedRoleName));
+        if (!remainingColumns.isEmpty()) {
+            jdbcTemplate.execute("GRANT %s(%s) ON %s.%s TO %s".formatted(
+                    normalizedPrivilege, String.join(", ", remainingColumns), normalizedOwner, normalizedTable, normalizedRoleName));
+        }
+    }
+
+    private List<String> findGrantedColumnsForPrivilege(JdbcTemplate jdbcTemplate, String grantee, String owner, String tableName, String privilege) {
+        String sql = """
+                SELECT DISTINCT COLUMN_NAME
+                FROM DBA_COL_PRIVS
+                WHERE GRANTEE = ?
+                  AND OWNER = ?
+                  AND TABLE_NAME = ?
+                  AND PRIVILEGE = ?
+                ORDER BY COLUMN_NAME
+                """;
+        return jdbcTemplate.queryForList(sql, String.class, grantee, owner, tableName, privilege);
     }
 
     public List<String> getTablesByOwner(String adminUsername, String adminPassword, String owner) {

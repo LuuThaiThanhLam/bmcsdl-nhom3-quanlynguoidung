@@ -431,6 +431,7 @@ public class AdminController {
     public String revokeColPriv(@PathVariable String username,
             @RequestParam String owner,
             @RequestParam String tableName,
+            @RequestParam String columnName,
             @RequestParam String privilege,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
@@ -439,7 +440,7 @@ public class AdminController {
         }
 
         return runAction(redirectAttributes, "Column privilege revoked successfully",
-                () -> userManagermentService.revokeColPriv(session, username, owner, tableName, privilege), "/admin/users/" + username);
+                () -> userManagermentService.revokeColPriv(session, username, owner, tableName, columnName, privilege), "/admin/users/" + username);
     }
 
     @GetMapping("/roles")
@@ -601,9 +602,9 @@ public class AdminController {
     }
 
     @PostMapping("/roles/{roleName}/revoke-col")
-    public String revokeColPrivilege(@PathVariable("roleName") String roleName, @RequestParam String owner, @RequestParam String tableName, @RequestParam String privilege, HttpSession session, RedirectAttributes redirectAttributes) {
+    public String revokeColPrivilege(@PathVariable("roleName") String roleName, @RequestParam String owner, @RequestParam String tableName, @RequestParam String columnName, @RequestParam String privilege, HttpSession session, RedirectAttributes redirectAttributes) {
         if (!isLoggedIn(session)) return "redirect:/";
-        return runAction(redirectAttributes, "Column privilege revoked successfully", () -> roleService.revokeColPrivilege(session, roleName, owner, tableName, privilege), "/admin/roles/" + roleName);
+        return runAction(redirectAttributes, "Column privilege revoked successfully", () -> roleService.revokeColPrivilege(session, roleName, owner, tableName, columnName, privilege), "/admin/roles/" + roleName);
     }
 
     @GetMapping("/profiles")

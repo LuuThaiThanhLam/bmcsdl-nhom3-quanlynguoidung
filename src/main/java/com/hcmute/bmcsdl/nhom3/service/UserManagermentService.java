@@ -211,10 +211,10 @@ public class UserManagermentService {
                 userManagermentRepository.grantColPriv(credential.username(), credential.password(), username, owner, tableName, columnNames, privilege));
     }
 
-    public void revokeColPriv(HttpSession session, String username, String owner, String tableName, String privilege) {
+    public void revokeColPriv(HttpSession session, String username, String owner, String tableName, String columnName, String privilege) {
         AdminCredential credential = getAdminCredential(session);
         runOracle("Khong the thu hoi quyen cot", () ->
-                userManagermentRepository.revokeColPriv(credential.username(), credential.password(), username, owner, tableName, privilege));
+                userManagermentRepository.revokeColPriv(credential.username(), credential.password(), username, owner, tableName, columnName, privilege));
     }
 
     public void revokeRole(HttpSession session, AdminUserDTO userDTO) {

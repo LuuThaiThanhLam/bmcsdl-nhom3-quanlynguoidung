@@ -23,9 +23,10 @@ public class LoginController {
             Model model) {
         try {
             String user = username.toUpperCase().trim();
-            DataSource ds = DatabaseConfig.createDataSource(user, password);
-            Connection conn = ds.getConnection();
-            conn.close();
+            DataSource ds = DatabaseConfig.createFreshDataSource(user, password);
+            try (Connection conn = ds.getConnection()) {
+                // Ket noi thanh cong thi moi luu thong tin dang nhap vao session.
+            }
 
             session.setAttribute("username", user);
             session.setAttribute("dbUser", user);
@@ -44,9 +45,18 @@ public class LoginController {
                     return "login";
             }
         } catch (SQLException e) {
-            model.addAttribute("error", "Sai tài khoản hoặc mật khẩu!");
+            model.addAttribute("error", loginErrorMessage(e));
             return "login";
         }
+    }
+
+    private String loginErrorMessage(SQLException e) {
+        return switch (e.getErrorCode()) {
+            case 28000 -> "Tài khoản đã bị khóa!";
+            case 28001 -> "Mật khẩu đã hết hạn!";
+            case 1017 -> "Sai tài khoản hoặc mật khẩu!";
+            default -> "Không thể đăng nhập: " + e.getMessage();
+        };
     }
 
     private String getUserRole(String username, String password) {

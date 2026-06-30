@@ -506,6 +506,32 @@
       border-color: #2c65c8;
     }
 
+    .quota-combo {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto 140px;
+      align-items: center;
+    }
+
+    .quota-combo input {
+      border-radius: 4px 0 0 4px;
+      border-right: 0;
+    }
+
+    .quota-unit {
+      align-items: center;
+      background: #eef1f5;
+      border: 1px solid #babfc7;
+      color: #374151;
+      display: inline-flex;
+      height: 36px;
+      padding: 0 12px;
+    }
+
+    .quota-combo select {
+      border-radius: 0 4px 4px 0;
+      height: 36px;
+    }
+
     .field-checkbox {
       display: flex;
       align-items: center;
@@ -882,6 +908,7 @@
                   <form th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" th:action="@{/admin/users/{username}/revoke-col-priv(username=${selectedUser.username})}" method="post" onsubmit="return confirm('Thu hoi quyen cot nay?');">
                     <input type="hidden" name="owner" th:value="${cp.OWNER}" />
                     <input type="hidden" name="tableName" th:value="${cp.TABLE_NAME}" />
+                    <input type="hidden" name="columnName" th:value="${cp.COLUMN_NAME}" />
                     <input type="hidden" name="privilege" th:value="${cp.PRIVILEGE}" />
                     <button class="button danger" style="min-height:26px; padding:2px 8px; font-size:11px;" type="submit">Revoke</button>
                   </form>
@@ -957,15 +984,19 @@
               </select>
             </div>
             <div class="field">
-              <label for="quotaVal">Quota Value</label>
-              <select id="quotaVal" name="quota">
-                <option value="UNLIMITED" selected>UNLIMITED</option>
-                <option value="10M">10 MB</option>
-                <option value="50M">50 MB</option>
-                <option value="100M">100 MB</option>
-                <option value="500M">500 MB</option>
-                <option value="1G">1 GB</option>
-              </select>
+              <label for="quotaValMb">Quota Value</label>
+              <input id="quotaVal" name="quota" type="hidden" value="50M" />
+              <div class="quota-combo" data-quota-combo data-hidden-id="quotaVal">
+                <input id="quotaValMb" data-quota-number type="number" min="1" step="1" value="50" required />
+                <span class="quota-unit">MB</span>
+                <select data-quota-preset aria-label="Quick quota values">
+                  <option value="">Custom</option>
+                  <option value="10">10 MB</option>
+                  <option value="50" selected>50 MB</option>
+                  <option value="100">100 MB</option>
+                  <option value="500">500 MB</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -1190,6 +1221,31 @@
     const openButtons = document.querySelectorAll("[data-open-modal]");
     const closeButtons = document.querySelectorAll("[data-close-modal]");
     const modals = document.querySelectorAll(".modal");
+
+    document.querySelectorAll('[data-quota-combo]').forEach((combo) => {
+      const numberInput = combo.querySelector('[data-quota-number]');
+      const presetSelect = combo.querySelector('[data-quota-preset]');
+      const hiddenInput = document.getElementById(combo.dataset.hiddenId);
+
+      function syncQuota() {
+        hiddenInput.value = `${numberInput.value || 0}M`;
+      }
+
+      presetSelect.addEventListener('change', () => {
+        if (presetSelect.value) {
+          numberInput.value = presetSelect.value;
+          syncQuota();
+        }
+      });
+
+      numberInput.addEventListener('input', () => {
+        presetSelect.value = '';
+        syncQuota();
+      });
+
+      numberInput.form?.addEventListener('submit', syncQuota);
+      syncQuota();
+    });
 
     openButtons.forEach((button) => {
       button.addEventListener("click", () => {

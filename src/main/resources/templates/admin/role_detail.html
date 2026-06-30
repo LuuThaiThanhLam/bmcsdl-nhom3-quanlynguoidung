@@ -588,6 +588,7 @@
                   <form th:action="@{/admin/roles/{role}/revoke-col(role=${roleName})}" method="post">
                     <input type="hidden" name="owner" th:value="${priv.OWNER}" />
                     <input type="hidden" name="tableName" th:value="${priv.TABLE_NAME}" />
+                    <input type="hidden" name="columnName" th:value="${priv.COLUMN_NAME}" />
                     <input type="hidden" name="privilege" th:value="${priv.PRIVILEGE}" />
                     <button class="button danger" style="min-height:26px; padding:2px 8px; font-size:11px;"
                       type="submit">Revoke</button>

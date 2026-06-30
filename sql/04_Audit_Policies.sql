@@ -91,7 +91,7 @@ AUDIT POLICY user_mgmt_audit_policy;
 
 PROMPT --- 2.3 Audit DML tren APP_TABLE.USER_PROFILE
 CREATE AUDIT POLICY audit_user_profile_all
-  ACTIONS SELECT, INSERT, UPDATE, DELETE ON APP_TABLE.USER_PROFILE;
+  ACTIONS INSERT, UPDATE, DELETE ON APP_TABLE.USER_PROFILE;
 AUDIT POLICY audit_user_profile_all;
 
 PROMPT ========================================================================

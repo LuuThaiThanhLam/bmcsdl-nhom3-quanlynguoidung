@@ -291,11 +291,14 @@ public class UserManagermentRepository {
             return defaultValue;
         }
 
-        String normalized = quota.trim().toUpperCase(Locale.ROOT);
-        if ("UNLIMITED".equals(normalized) || normalized.matches("\\d+[KMG]?")) {
+        String normalized = quota.trim().toUpperCase(Locale.ROOT).replaceAll("\\s+", "");
+        if ("UNLIMITED".equals(normalized)) {
             return normalized;
         }
-        throw new IllegalArgumentException("Quota khong hop le. Vi du: 50M, 1024K, 1G hoac UNLIMITED");
+        if (normalized.matches("\\d+(K|KB|M|MB|G|GB)?")) {
+            return normalized.replaceAll("B$", "");
+        }
+        throw new IllegalArgumentException("Quota khong hop le. Vi du: 50 MB, 1024K, 1G hoac UNLIMITED");
     }
 
     public List<String> findPermanentTablespaces(String adminUsername, String adminPassword) {
@@ -343,6 +346,7 @@ public class UserManagermentRepository {
                 SELECT OWNER, TABLE_NAME, PRIVILEGE, GRANTABLE
                 FROM DBA_TAB_PRIVS
                 WHERE GRANTEE = ?
+                  AND TABLE_NAME NOT LIKE 'BIN$%'
                 ORDER BY OWNER, TABLE_NAME, PRIVILEGE
                 """;
         return jdbc(adminUsername, adminPassword).queryForList(sql, normalizeAppUsernameReadOnly(username));
@@ -414,12 +418,35 @@ public class UserManagermentRepository {
         jdbc(adminUsername, adminPassword).execute(sql);
     }
 
-    public void revokeColPriv(String adminUsername, String adminPassword, String username, String owner, String tableName, String privilege) {
+    public void revokeColPriv(String adminUsername, String adminPassword, String username, String owner, String tableName, String columnName, String privilege) {
         String normalizedUsername = normalizeAppUsername(username);
         String cleanOwner = normalizeIdentifier(owner);
         String cleanTable = normalizeIdentifier(tableName);
+        String cleanColumn = normalizeIdentifier(columnName);
         String cleanPriv = privilege.trim().toUpperCase(Locale.ROOT);
-        jdbc(adminUsername, adminPassword).execute("REVOKE %s ON %s.%s FROM %s".formatted(cleanPriv, cleanOwner, cleanTable, normalizedUsername));
+        JdbcTemplate jdbcTemplate = jdbc(adminUsername, adminPassword);
+        List<String> remainingColumns = findGrantedColumnsForPrivilege(jdbcTemplate, normalizedUsername, cleanOwner, cleanTable, cleanPriv).stream()
+                .filter(column -> !column.equals(cleanColumn))
+                .toList();
+
+        jdbcTemplate.execute("REVOKE %s ON %s.%s FROM %s".formatted(cleanPriv, cleanOwner, cleanTable, normalizedUsername));
+        if (!remainingColumns.isEmpty()) {
+            jdbcTemplate.execute("GRANT %s(%s) ON %s.%s TO %s".formatted(
+                    cleanPriv, String.join(", ", remainingColumns), cleanOwner, cleanTable, normalizedUsername));
+        }
+    }
+
+    private List<String> findGrantedColumnsForPrivilege(JdbcTemplate jdbcTemplate, String grantee, String owner, String tableName, String privilege) {
+        String sql = """
+                SELECT DISTINCT COLUMN_NAME
+                FROM DBA_COL_PRIVS
+                WHERE GRANTEE = ?
+                  AND OWNER = ?
+                  AND TABLE_NAME = ?
+                  AND PRIVILEGE = ?
+                ORDER BY COLUMN_NAME
+                """;
+        return jdbcTemplate.queryForList(sql, String.class, grantee, owner, tableName, privilege);
     }
 
     public List<String> findAllSchemas(String adminUsername, String adminPassword) {

@@ -116,9 +116,9 @@ public class RoleManagermentService {
         return execute(session, (username, password) -> roleRepository.getAllAppTables(username, password));
     }
 
-    public void revokeColPrivilege(HttpSession session, String roleName, String owner, String tableName, String privilege) {
+    public void revokeColPrivilege(HttpSession session, String roleName, String owner, String tableName, String columnName, String privilege) {
         executeVoid(session, (username, password) -> {
-            roleRepository.revokeColPrivilege(username, password, roleName, owner, tableName, privilege);
+            roleRepository.revokeColPrivilege(username, password, roleName, owner, tableName, columnName, privilege);
         });
     }
 
