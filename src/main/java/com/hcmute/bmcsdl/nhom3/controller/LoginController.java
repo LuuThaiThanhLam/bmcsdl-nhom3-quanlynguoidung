@@ -23,16 +23,12 @@ public class LoginController {
             Model model) {
         try {
             String user = username.toUpperCase().trim();
-            DataSource ds = DatabaseConfig.createFreshDataSource(user, password);
-            try (Connection conn = ds.getConnection()) {
-                // Ket noi thanh cong thi moi luu thong tin dang nhap vao session.
-            }
+            String role = getUserRole(user, password);
 
             session.setAttribute("username", user);
             session.setAttribute("dbUser", user);
             session.setAttribute("dbPass", password);
 
-            String role = getUserRole(user, password);
             switch (role) {
                 case "ADMIN":
                     return "redirect:/admin/dashboard";
@@ -59,7 +55,7 @@ public class LoginController {
         };
     }
 
-    private String getUserRole(String username, String password) {
+    private String getUserRole(String username, String password) throws SQLException {
         String sql = "SELECT ROLE FROM SESSION_ROLES";
         try (Connection conn = DatabaseConfig.createDataSource(username, password).getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -73,8 +69,6 @@ public class LoginController {
                 if ("APP_ROLE_USER".equals(r))
                     return "USER";
             }
-        } catch (SQLException e) {
-            return "UNKNOWN";
         }
         return "UNKNOWN";
     }

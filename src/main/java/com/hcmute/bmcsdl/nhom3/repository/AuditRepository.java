@@ -51,7 +51,7 @@ public class AuditRepository {
                 SELECT * FROM (
                     SELECT inner_q.*, ROWNUM rn FROM (
                         SELECT EVENT_TIMESTAMP, DBUSERNAME, OS_USERNAME,
-                               ACTION_NAME, OBJECT_SCHEMA, OBJECT_NAME, RETURN_CODE, SQL_TEXT
+                               ACTION_NAME, OBJECT_SCHEMA, OBJECT_NAME, RETURN_CODE, SQL_TEXT, SQL_BINDS
                         FROM UNIFIED_AUDIT_TRAIL
                         %s
                         ORDER BY EVENT_TIMESTAMP DESC
@@ -72,6 +72,8 @@ public class AuditRepository {
             dto.setReturnCode(String.valueOf(rs.getInt("RETURN_CODE")));
             String sqlText = rs.getString("SQL_TEXT");
             dto.setSqlText(sqlText != null ? sqlText : "N/A");
+            String sqlBinds = rs.getString("SQL_BINDS");
+            dto.setSqlBinds(sqlBinds != null ? sqlBinds : "N/A");
             dto.setAuditType("UNIFIED");
             return dto;
         });
@@ -114,7 +116,7 @@ public class AuditRepository {
                 SELECT * FROM (
                     SELECT inner_q.*, ROWNUM rn FROM (
                         SELECT TIMESTAMP, DB_USER, OS_USER,
-                               STATEMENT_TYPE, OBJECT_SCHEMA, OBJECT_NAME, SQL_TEXT,
+                               STATEMENT_TYPE, OBJECT_SCHEMA, OBJECT_NAME, SQL_TEXT, SQL_BIND,
                                0 AS RETURN_CODE
                         FROM DBA_FGA_AUDIT_TRAIL
                         %s
@@ -136,6 +138,8 @@ public class AuditRepository {
             dto.setReturnCode("0");
             String sqlText = rs.getString("SQL_TEXT");
             dto.setSqlText(sqlText != null ? sqlText : "N/A");
+            String sqlBinds = rs.getString("SQL_BIND");
+            dto.setSqlBinds(sqlBinds != null ? sqlBinds : "N/A");
             dto.setAuditType("FGA");
             return dto;
         });

@@ -71,7 +71,8 @@
     table { border-collapse: collapse; min-width: 1100px; width: 100%; }
     th, td { border-bottom: 1px solid #d6d9dd; padding: 9px 12px; text-align: left; vertical-align: middle; }
     th { background: #f7f8f9; color: #23272d; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
-    tbody tr:hover { background: #eceff3; }
+    tbody tr.audit-row { cursor: pointer; }
+    tbody tr.audit-row:hover { background: #eceff3; }
     .ts-cell { color: #444; font-size: 12px; white-space: nowrap; }
     .username-cell { font-weight: 700; color: #14171b; white-space: nowrap; }
     .sql-cell { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #444; font-size: 12px; font-family: monospace; }
@@ -273,7 +274,18 @@
                   <div class="empty-state">No audit records found for the selected filter.</div>
                 </td>
               </tr>
-              <tr th:each="log : ${auditLogs}">
+              <tr th:each="log : ${auditLogs}" class="audit-row"
+                  th:data-timestamp="${log.eventTimestamp}"
+                  th:data-username="${log.dbUsername}"
+                  th:data-osuser="${log.osUsername != null ? log.osUsername : 'unknown'}"
+                  th:data-action="${log.actionName}"
+                  th:data-object="${log.objectName}"
+                  th:data-returncode="${log.returnCode}"
+                  th:data-sql="${log.sqlText}"
+                  th:data-sqlbinds="${log.sqlBinds}"
+                  th:data-type="${log.auditType}"
+                  th:data-schema="${log.objectSchema != null ? log.objectSchema : 'N/A'}"
+                  onclick="showAuditDetail(this)">
                 <td class="ts-cell" th:text="${log.eventTimestamp}">-</td>
                 <td class="username-cell" th:text="${log.dbUsername}">APP_USER</td>
                 <td class="obj-cell" th:text="${log.osUsername != null ? log.osUsername : 'unknown'}">admin</td>
@@ -350,6 +362,59 @@
       <div class="modal-footer">
         <button class="button secondary" onclick="closeExportModal()">Cancel</button>
         <button class="button success" onclick="exportData('export')">Confirm Export</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Chi tiết Audit Record -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal" style="width: min(650px, 95vw);">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Audit Record Details</span>
+        <span id="detailReturnCodeBadge" class="rc-ok">SUCCESS (0)</span>
+      </div>
+      <div class="modal-body" style="padding: 18px 20px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 2px;">Timestamp</div>
+            <div id="detailTimestamp" style="font-weight: 600; color: #111315;">-</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 2px;">Audit Type</div>
+            <div id="detailAuditType" style="font-weight: 600; color: #111315;">-</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 2px;">DB Username</div>
+            <div id="detailUsername" style="font-weight: 600; color: #111315; font-family: monospace;">-</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 2px;">OS User</div>
+            <div id="detailOsUser" style="font-weight: 600; color: #111315; font-family: monospace;">-</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 2px;">Action Name</div>
+            <div id="detailAction" style="font-weight: 600; color: #111315;">-</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 2px;">Target Object</div>
+            <div id="detailObject" style="font-weight: 600; color: #111315; font-family: monospace;">-</div>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid #e0e3e7; padding-top: 14px;">
+          <div style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 6px;">SQL Statement</div>
+          <textarea id="detailSqlText" readonly style="width: 100%; height: 110px; font-family: Consolas, Monaco, monospace; font-size: 12px; border: 1px solid #c8ccd1; border-radius: 4px; padding: 10px; background: #fafafa; color: #23272d; resize: vertical; outline: none; margin-bottom: 12px;"></textarea>
+        </div>
+
+
+
+        <div style="border-top: 1px solid #e0e3e7; padding-top: 14px;">
+          <div style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 6px;">Mapped SQL (Preview)</div>
+          <textarea id="detailMappedSql" readonly style="width: 100%; height: 110px; font-family: Consolas, Monaco, monospace; font-size: 12px; border: 1px solid #c8ccd1; border-radius: 4px; padding: 10px; background: #f0fdf4; color: #166534; border-color: #bbf7d0; resize: vertical; outline: none;"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="button secondary" onclick="closeDetailModal()">Close</button>
       </div>
     </div>
   </div>
@@ -460,6 +525,87 @@
         showToast(err.message || 'Server connection error!', 'error');
         console.error(err);
       });
+    }
+
+    function parseOracleBinds(bindsStr) {
+      if (!bindsStr || bindsStr === 'N/A') return {};
+      const binds = {};
+      let remaining = bindsStr.trim();
+      const regex = /^#(\d+)\((\d+)\):/;
+      
+      while (remaining.length > 0) {
+        const match = remaining.match(regex);
+        if (!match) break;
+        const pos = match[1];
+        const len = parseInt(match[2], 10);
+        const prefixLen = match[0].length;
+        const value = remaining.substring(prefixLen, prefixLen + len);
+        binds[pos] = value;
+        remaining = remaining.substring(prefixLen + len).trim();
+      }
+      return binds;
+    }
+
+    function interpolateSQL(sql, binds) {
+      if (!sql || sql === 'N/A') return sql;
+      return sql.replace(/:(\d+)\b/g, (match, pos) => {
+        if (binds[pos] !== undefined) {
+          const val = binds[pos];
+          if (/^(0|[1-9]\d*)$/.test(val)) {
+            return val;
+          }
+          return "'" + val.replace(/'/g, "''") + "'";
+        }
+        return match;
+      });
+    }
+
+    function showAuditDetail(row) {
+      const timestamp = row.getAttribute('data-timestamp');
+      const username = row.getAttribute('data-username');
+      const osuser = row.getAttribute('data-osuser');
+      const action = row.getAttribute('data-action');
+      const object = row.getAttribute('data-object');
+      const schema = row.getAttribute('data-schema');
+      const returncode = row.getAttribute('data-returncode');
+      const sqlText = row.getAttribute('data-sql');
+      const sqlBinds = row.getAttribute('data-sqlbinds');
+      const type = row.getAttribute('data-type');
+
+      document.getElementById('detailTimestamp').innerText = timestamp || '-';
+      document.getElementById('detailUsername').innerText = username || '-';
+      document.getElementById('detailOsUser').innerText = osuser || '-';
+      document.getElementById('detailAction').innerText = action || '-';
+      document.getElementById('detailObject').innerText = (schema && schema !== 'N/A' ? schema + '.' : '') + (object || 'N/A');
+      
+      const rcBadge = document.getElementById('detailReturnCodeBadge');
+      if (returncode === '0') {
+        rcBadge.className = 'rc-ok';
+        rcBadge.innerText = 'SUCCESS (0)';
+      } else {
+        rcBadge.className = 'rc-err';
+        rcBadge.innerText = 'ERROR (' + returncode + ')';
+      }
+
+      document.getElementById('detailSqlText').value = sqlText || 'N/A';
+      document.getElementById('detailAuditType').innerText = type === 'UNIFIED' ? 'Unified Audit Trail' : 'Fine-Grained Audit (FGA)';
+
+      let mappedSql = sqlText || 'N/A';
+      if (sqlText && sqlBinds && sqlBinds !== 'N/A' && sqlBinds.trim() !== '') {
+        try {
+          const parsedBinds = parseOracleBinds(sqlBinds);
+          mappedSql = interpolateSQL(sqlText, parsedBinds);
+        } catch (e) {
+          console.error("Error parsing binds:", e);
+        }
+      }
+      document.getElementById('detailMappedSql').value = mappedSql;
+
+      document.getElementById('detailModal').classList.add('active');
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.remove('active');
     }
   </script>
 </body>

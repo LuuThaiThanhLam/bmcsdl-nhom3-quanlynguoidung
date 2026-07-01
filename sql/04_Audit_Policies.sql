@@ -13,7 +13,7 @@ CHUC NANG:
 - Unified Auditing:
   + session_audit_policy: logon/logoff
   + user_mgmt_audit_policy: grant/revoke
-  + audit_user_profile_all: SELECT/INSERT/UPDATE/DELETE tren APP_TABLE.USER_PROFILE
+  + audit_user_profile_all: INSERT/UPDATE/DELETE tren APP_TABLE.USER_PROFILE
 - FGA:
   + FGA_SELECT_PHONE: SELECT cot PHONE_NUMBER voi PHONE_NUMBER LIKE '090%'
   + FGA_UPDATE_OTHER_USER: UPDATE dong co USERNAME khac SESSION_USER
@@ -91,7 +91,7 @@ AUDIT POLICY user_mgmt_audit_policy;
 
 PROMPT --- 2.3 Audit DML tren APP_TABLE.USER_PROFILE
 CREATE AUDIT POLICY audit_user_profile_all
-  ACTIONS INSERT, UPDATE, DELETE ON APP_TABLE.USER_PROFILE;
+  ACTIONS INSERT, DELETE ON APP_TABLE.USER_PROFILE;
 AUDIT POLICY audit_user_profile_all;
 
 PROMPT ========================================================================

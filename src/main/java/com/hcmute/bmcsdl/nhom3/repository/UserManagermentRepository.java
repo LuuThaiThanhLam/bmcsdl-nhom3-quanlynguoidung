@@ -370,6 +370,10 @@ public class UserManagermentRepository {
                 normalizedUsername, sanitizedQuota, normalizedTablespace));
     }
 
+    public void revokeUserQuota(String adminUsername, String adminPassword, String username, String tablespace) {
+        setUserQuota(adminUsername, adminPassword, username, tablespace, "0");
+    }
+
     public void grantSysPriv(String adminUsername, String adminPassword, String username, String privilege, boolean adminOption) {
         String normalizedUsername = normalizeAppUsername(username);
         String cleanPriv = privilege.trim().toUpperCase(Locale.ROOT);

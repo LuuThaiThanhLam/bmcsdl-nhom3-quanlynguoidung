@@ -181,6 +181,12 @@ public class UserManagermentService {
                 userManagermentRepository.setUserQuota(credential.username(), credential.password(), username, tablespace, quota));
     }
 
+    public void revokeUserQuota(HttpSession session, String username, String tablespace) {
+        AdminCredential credential = getAdminCredential(session);
+        runOracle("Khong the thu hoi quota", () ->
+                userManagermentRepository.revokeUserQuota(credential.username(), credential.password(), username, tablespace));
+    }
+
     public void grantSysPriv(HttpSession session, String username, String privilege, boolean adminOption) {
         AdminCredential credential = getAdminCredential(session);
         runOracle("Khong the cap quyen he thong", () ->

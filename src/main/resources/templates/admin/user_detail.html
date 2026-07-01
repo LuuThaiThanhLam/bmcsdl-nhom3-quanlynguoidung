@@ -601,25 +601,26 @@
 
       <nav class="nav">
         <a class="nav-item" href="/admin/dashboard">
-          <span class="nav-icon">□</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span>
           <span>Dashboard</span>
         </a>
         <a class="nav-item active" href="/admin/users">
-          <span class="nav-icon">▦</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
           <span>User Management</span>
         </a>
         <a class="nav-item" href="/admin/roles">
-          <span class="nav-icon">◇</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
           <span>Role Management</span>
         </a>
         <a class="nav-item" href="/admin/profiles">
-          <span class="nav-icon">▤</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
           <span>Profile Management</span>
         </a>
         <a class="nav-item" href="/admin/audit-logs">
-          <span class="nav-icon">≡</span>
+          <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></span>
           <span>Audit Logs</span>
         </a>
+        <a class="nav-item" href="/admin/sessions"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg></span><span>Session Management</span></a>
       </nav>
 
       <div class="sidebar-footer">
@@ -639,7 +640,7 @@
           </div>
         </div>
         <div class="topbar-actions">
-          <button th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" class="button warning" type="button" data-open-modal="editUserModal">Edit</button>
+          <button th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" class="button warning" type="button" data-open-modal="editUserModal">Edit User</button>
           <a class="button secondary" href="/admin/users">&larr; Back to Users</a>
         </div>
       </section>
@@ -738,11 +739,12 @@
                 <th>Max Bytes</th>
                 <th>Blocks Used</th>
                 <th>Max Blocks</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               <tr th:if="${#lists.isEmpty(quotas)}">
-                <td colspan="5" class="empty-state">No tablespace quotas defined for this user.</td>
+                <td colspan="6" class="empty-state">No tablespace quotas defined for this user.</td>
               </tr>
               <tr th:each="q : ${quotas}">
                 <td th:text="${q.TABLESPACE_NAME}">USERS</td>
@@ -750,6 +752,24 @@
                 <td th:text="${q.MAX_BYTES == null or q.MAX_BYTES < 0} ? 'UNLIMITED' : ${q.MAX_BYTES}">10485760</td>
                 <td th:text="${q.BLOCKS}">0</td>
                 <td th:text="${q.MAX_BLOCKS == null or q.MAX_BLOCKS < 0} ? 'UNLIMITED' : ${q.MAX_BLOCKS}">1280</td>
+                <td>
+                  <div style="display: flex; gap: 8px;" th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}">
+                    <button class="button secondary" style="min-height: 26px; padding: 2px 8px; display: flex; align-items: center; justify-content: center;" type="button"
+                            th:title="'Edit Quota for ' + ${q.TABLESPACE_NAME}"
+                            th:data-tablespace="${q.TABLESPACE_NAME}"
+                            th:data-max-bytes="${q.MAX_BYTES}"
+                            onclick="openEditQuotaModal(this)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                      </svg>
+                    </button>
+                    <form th:action="@{/admin/users/{username}/revoke-quota(username=${selectedUser.username})}" method="post" onsubmit="return confirm('Thu hoi quota nay?');" style="margin: 0; display: inline;">
+                      <input type="hidden" name="tablespace" th:value="${q.TABLESPACE_NAME}" />
+                      <button class="button danger" style="min-height:26px; padding:2px 8px; font-size:11px;" type="submit">Revoke</button>
+                    </form>
+                  </div>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -768,19 +788,17 @@
               <tr>
                 <th>Role</th>
                 <th>Admin Option</th>
-                <th>Delegate Option</th>
                 <th>Default Role</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               <tr th:if="${#lists.isEmpty(userRolesWithOptions)}">
-                <td colspan="5" class="empty-state">No roles assigned to this user.</td>
+                <td colspan="4" class="empty-state">No roles assigned to this user.</td>
               </tr>
               <tr th:each="r : ${userRolesWithOptions}">
                 <td th:text="${r.GRANTED_ROLE}">APP_ROLE_USER</td>
                 <td><span th:class="${'badge ' + (r.ADMIN_OPTION == 'YES' ? 'badge-yes' : 'badge-no')}" th:text="${r.ADMIN_OPTION}">NO</span></td>
-                <td><span th:class="${'badge ' + (r.DELEGATE_OPTION == 'YES' ? 'badge-yes' : 'badge-no')}" th:text="${r.DELEGATE_OPTION}">NO</span></td>
                 <td><span th:class="${'badge ' + (r.DEFAULT_ROLE == 'YES' ? 'badge-yes' : 'badge-no')}" th:text="${r.DEFAULT_ROLE}">YES</span></td>
                 <td>
                   <form th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" th:action="@{/admin/users/{username}/revoke-role(username=${selectedUser.username})}" method="post" onsubmit="return confirm('Thu hoi role nay?');">
@@ -795,7 +813,6 @@
         </div>
         <div class="panel-legend">
           <div>ⓘ <strong>Admin Option</strong>: If YES, this user can grant this role to other users.</div>
-          <div>ⓘ <strong>Delegate Option</strong>: If YES, this user can delegate grant permission to others.</div>
           <div>ⓘ <strong>Default Role</strong>: If YES, this role is automatically enabled when user logs in.</div>
         </div>
       </div>
@@ -848,7 +865,7 @@
                 <th>Owner</th>
                 <th>Table Name</th>
                 <th>Privilege</th>
-                <th>Grantable</th>
+                <th>Grant Option</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -890,20 +907,18 @@
                 <th>Table Name</th>
                 <th>Column</th>
                 <th>Privilege</th>
-                <th>Grantable</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               <tr th:if="${#lists.isEmpty(colPrivs)}">
-                <td colspan="6" class="empty-state">No column privileges granted to this user.</td>
+                <td colspan="5" class="empty-state">No column privileges granted to this user.</td>
               </tr>
               <tr th:each="cp : ${colPrivs}">
                 <td th:text="${cp.OWNER}">SYSTEM</td>
                 <td th:text="${cp.TABLE_NAME}">DEMO_TABLE</td>
                 <td th:text="${cp.COLUMN_NAME}">ID</td>
                 <td th:text="${cp.PRIVILEGE}">UPDATE</td>
-                <td><span th:class="${'badge ' + (cp.GRANTABLE == 'YES' ? 'badge-yes' : 'badge-no')}" th:text="${cp.GRANTABLE}">NO</span></td>
                 <td>
                   <form th:unless="${selectedUser.username == 'APP_DBA_ADMIN'}" th:action="@{/admin/users/{username}/revoke-col-priv(username=${selectedUser.username})}" method="post" onsubmit="return confirm('Thu hoi quyen cot nay?');">
                     <input type="hidden" name="owner" th:value="${cp.OWNER}" />
@@ -918,9 +933,9 @@
             </tbody>
           </table>
         </div>
-        <div class="panel-legend alert">
-          <div>ⓘ <strong>Note</strong>: Oracle doesn't support WITH GRANT OPTION for column privileges. The grantee cannot grant this privilege to others.</div>
-        </div>
+
+
+
       </div>
     </main>
   </div>
@@ -943,9 +958,13 @@
             </div>
             <div class="field">
               <label for="editNewPassword">New password</label>
-              <input id="editNewPassword" name="newPassword" type="password" placeholder="Leave blank to keep current" />
+              <div style="display: flex; position: relative; width: 100%;">
+                <input id="editNewPassword" name="newPassword" type="password" placeholder="Leave blank to keep current" style="padding-right: 50px; width: 100%;" />
+                <button type="button" onclick="togglePassVis('editNewPassword', this)"
+                  style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 11px; font-weight: 700; color: #5d646e;">SHOW</button>
+              </div>
             </div>
-            <div class="field">
+            <div class="field" style="display:none;">
               <label for="editDefaultTablespace">Default tablespace</label>
               <select id="editDefaultTablespace" name="defaultTablespace">
                 <option th:each="ts : ${permanentTablespaces}" th:value="${ts}" th:text="${ts}" th:selected="${ts == selectedUser.defaultTablespace}">TS_USERS</option>
@@ -995,9 +1014,16 @@
                   <option value="50" selected>50 MB</option>
                   <option value="100">100 MB</option>
                   <option value="500">500 MB</option>
+                  <option value="UNLIMITED">Unlimited</option>
                 </select>
               </div>
             </div>
+          </div>
+          <div class="warning-banner" style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 10px 12px; margin-top: 16px; display: flex; gap: 8px; align-items: flex-start;">
+            <span style="color: #d97706; font-weight: bold; font-size: 14px; line-height: 14px;">⚠</span>
+            <span style="color: #b45309; font-size: 12px; line-height: 1.4;">
+              <strong>Note:</strong> Setting a quota below the current used space will not cause any data loss. However, the user will be prevented from writing new data or creating new objects on this tablespace until additional quota is granted.
+            </span>
           </div>
         </div>
         <div class="dialog-footer">
@@ -1109,7 +1135,7 @@
       <form th:action="@{/admin/users/{username}/grant-obj-priv(username=${selectedUser.username})}" method="post">
         <div class="dialog-header">
           <div class="dialog-title" style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #555;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2c65c8;">
               <rect x="3" y="3" width="7" height="7"></rect>
               <rect x="14" y="3" width="7" height="7"></rect>
               <rect x="14" y="14" width="7" height="7"></rect>
@@ -1160,7 +1186,7 @@
       <form th:action="@{/admin/users/{username}/grant-col-priv(username=${selectedUser.username})}" method="post">
         <div class="dialog-header">
           <div class="dialog-title" style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #555;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #2c65c8;">
               <rect x="3" y="3" width="7" height="7"></rect>
               <rect x="14" y="3" width="7" height="7"></rect>
               <rect x="14" y="14" width="7" height="7"></rect>
@@ -1189,7 +1215,7 @@
           
           <div style="font-size: 12px; color: #6b7280; margin-bottom: 16px; line-height: 1.4; display: flex; gap: 6px; align-items: flex-start; margin-top: 6px;">
             <span style="font-size: 14px; line-height: 12px; color: #9ca3af;">ⓘ</span>
-            <span>Oracle only supports INSERT, UPDATE for column-level privileges. SELECT must be granted on the whole table.</span>
+            <span>Note: Column-level privileges only support INSERT and UPDATE. For SELECT restrictions, please use Views or Virtual Private Database (VPD) policies instead of direct column grants on base tables.</span>
           </div>
 
           <div class="field" style="margin-bottom: 0;">
@@ -1228,23 +1254,113 @@
       const hiddenInput = document.getElementById(combo.dataset.hiddenId);
 
       function syncQuota() {
-        hiddenInput.value = `${numberInput.value || 0}M`;
+        if (presetSelect && presetSelect.value === 'UNLIMITED') {
+          hiddenInput.value = 'UNLIMITED';
+          if (numberInput) {
+            numberInput.style.visibility = 'hidden';
+            numberInput.required = false;
+          }
+          const unit = combo.querySelector('.quota-unit');
+          if (unit) unit.style.visibility = 'hidden';
+        } else {
+          if (numberInput) {
+            numberInput.style.visibility = 'visible';
+            numberInput.required = true;
+            hiddenInput.value = `${numberInput.value || 0}M`;
+          }
+          const unit = combo.querySelector('.quota-unit');
+          if (unit) unit.style.visibility = 'visible';
+        }
       }
 
-      presetSelect.addEventListener('change', () => {
-        if (presetSelect.value) {
-          numberInput.value = presetSelect.value;
+      if (presetSelect) {
+        presetSelect.addEventListener('change', () => {
+          if (presetSelect.value) {
+            if (presetSelect.value !== 'UNLIMITED' && numberInput) {
+              numberInput.value = presetSelect.value;
+            }
+            syncQuota();
+          } else {
+            // Custom
+            if (numberInput) {
+              numberInput.style.visibility = 'visible';
+              numberInput.required = true;
+            }
+            const unit = combo.querySelector('.quota-unit');
+            if (unit) unit.style.visibility = 'visible';
+          }
+        });
+      }
+
+      if (numberInput) {
+        numberInput.addEventListener('input', () => {
+          if (presetSelect) presetSelect.value = '';
           syncQuota();
-        }
-      });
+        });
+      }
 
-      numberInput.addEventListener('input', () => {
-        presetSelect.value = '';
-        syncQuota();
-      });
-
-      numberInput.form?.addEventListener('submit', syncQuota);
+      if (numberInput && numberInput.form) {
+        numberInput.form.addEventListener('submit', syncQuota);
+      }
       syncQuota();
+    });
+
+    function openEditQuotaModal(button) {
+      const tablespace = button.getAttribute('data-tablespace');
+      const maxBytes = parseInt(button.getAttribute('data-max-bytes'));
+      
+      const modal = document.getElementById('setQuotaModal');
+      if (!modal) return;
+      
+      // Update Title
+      const title = modal.querySelector('.dialog-title');
+      if (title) title.textContent = 'Edit Tablespace Quota';
+      
+      // Select tablespace and keep it selected
+      const select = modal.querySelector('#quotaTablespace');
+      if (select) {
+        select.value = tablespace;
+      }
+      
+      // Update quota values
+      const numberInput = modal.querySelector('[data-quota-number]');
+      const presetSelect = modal.querySelector('[data-quota-preset]');
+      
+      if (maxBytes < 0) {
+        if (presetSelect) presetSelect.value = 'UNLIMITED';
+      } else {
+        if (presetSelect) presetSelect.value = ''; // Custom
+        if (numberInput) numberInput.value = Math.round(maxBytes / (1024 * 1024));
+      }
+      
+      // Trigger sync
+      if (presetSelect) {
+        presetSelect.dispatchEvent(new Event('change'));
+      }
+      
+      // Open modal
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    // Reset modal when clicking '+ Set Quota' button
+    document.addEventListener('DOMContentLoaded', () => {
+      const setQuotaBtn = document.querySelector('[data-open-modal="setQuotaModal"]');
+      if (setQuotaBtn) {
+        setQuotaBtn.addEventListener('click', () => {
+          const modal = document.getElementById('setQuotaModal');
+          if (modal) {
+            const title = modal.querySelector('.dialog-title');
+            if (title) title.textContent = 'Set Tablespace Quota';
+            
+            const presetSelect = modal.querySelector('[data-quota-preset]');
+            if (presetSelect) {
+              presetSelect.value = '50';
+              presetSelect.dispatchEvent(new Event('change'));
+            }
+          }
+        });
+      }
     });
 
     openButtons.forEach((button) => {
@@ -1275,6 +1391,19 @@
         }
       });
     });
+
+    function togglePassVis(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = 'HIDE';
+        btn.style.color = '#2c65c8';
+      } else {
+        input.type = 'password';
+        btn.textContent = 'SHOW';
+        btn.style.color = '#5d646e';
+      }
+    }
 
     // Combo box select elements
     async function loadTables(owner, targetSelectId) {

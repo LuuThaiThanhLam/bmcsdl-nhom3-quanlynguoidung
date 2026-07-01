@@ -467,6 +467,7 @@
         <a class="nav-item active" href="/admin/roles"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span><span>Role Management</span></a>
         <a class="nav-item" href="/admin/profiles"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span>Profile Management</span></a>
         <a class="nav-item" href="/admin/audit-logs"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></span><span>Audit Logs</span></a>
+        <a class="nav-item" href="/admin/sessions"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg></span><span>Session Management</span></a>
       </nav>
       <div class="sidebar-footer">
         <div class="session-user">Signed in: <strong th:text="${session.username}">APP_DBA_ADMIN</strong></div>
@@ -509,16 +510,16 @@
 
             <!-- No password yet -->
             <button th:if="${detail.role.passwordRequired != 'YES'}"
-                    class="button primary" style="min-height: 26px; padding: 3px 10px; font-size: 12px;"
-                    onclick="openModal('setRolePasswordModal')">+ Set Password</button>
+                    class="button secondary" style="min-height: 26px; padding: 3px 10px; font-size: 12px;"
+                    onclick="openModal('setRolePasswordModal')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>Set Password</button>
 
             <!-- Has password -->
             <button th:if="${detail.role.passwordRequired == 'YES'}"
-                    class="button warning" style="min-height: 26px; padding: 3px 10px; font-size: 12px;"
-                    onclick="openModal('editRolePasswordModal')">&#x270E; Update Password</button>
+                    class="button secondary" style="min-height: 26px; padding: 3px 10px; font-size: 12px;"
+                    onclick="openModal('editRolePasswordModal')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>Update Password</button>
             <button th:if="${detail.role.passwordRequired == 'YES'}"
-                    class="button danger" style="min-height: 26px; padding: 3px 10px; font-size: 12px;"
-                    onclick="openModal('removeRolePasswordModal')">&#x2715; Remove Password</button>
+                    class="button secondary" style="min-height: 26px; padding: 3px 10px; font-size: 12px; color: #b93442; border-color: #f1cdd1; background: #fff8f8;"
+                    onclick="openModal('removeRolePasswordModal')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>Remove Password</button>
           </div>
         </div>
       </div>
@@ -691,7 +692,7 @@
                 <th>Owner</th>
                 <th>Object</th>
                 <th>Privilege</th>
-                <th>Grantable</th>
+
                 <th class="col-action">Action</th>
               </tr>
             </thead>
@@ -700,8 +701,8 @@
                 <td th:text="${priv.OWNER}">SYS</td>
                 <td><strong th:text="${priv.OBJECT_NAME}">DBA_USERS</strong></td>
                 <td th:text="${priv.PRIVILEGE}">SELECT</td>
-                <td><span th:class="${'badge ' + (priv.GRANTABLE == 'YES' ? 'badge-yes' : 'badge-no')}"
-                    th:text="${priv.GRANTABLE}">NO</span></td>
+                <!--
+-->
                 <td>
                   <form th:action="@{/admin/roles/{role}/revoke-tab(role=${roleName})}" method="post">
                     <input type="hidden" name="owner" th:value="${priv.OWNER}" />
@@ -853,7 +854,7 @@
           </div>
           <div class="field-checkbox">
             <input type="checkbox" id="withAdminSys" name="withAdminOption" value="true">
-            <label for="withAdminSys">With Admin Option (Demo - backend will handle properly if supported)</label>
+            <label for="withAdminSys">With Admin Option</label>
           </div>
         </div>
         <div class="dialog-footer">
@@ -881,7 +882,7 @@
           </div>
           <div class="field-checkbox">
             <input type="checkbox" id="withAdminRoleRole" name="withAdminOption" value="true">
-            <label for="withAdminRoleRole">With Admin Option</label>
+            <label for="withAdminRoleRole">With Admin Option</label></div><div class="warning-banner" style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 10px 12px; margin-top: 16px; display: flex; gap: 8px; align-items: flex-start;"><span style="color: #d97706; font-weight: bold; font-size: 14px; line-height: 14px;">⚠</span><span style="color: #b45309; font-size: 12px; line-height: 1.4;"><strong>Note:</strong> Oracle does NOT allow granting a password-protected role or a Secure Application Role to another role (ORA-28405). If the role you are trying to grant is secured with a password, it must be granted directly to a User instead of another role.</span></div><div style="display:none;">
           </div>
         </div>
         <div class="dialog-footer">
@@ -898,7 +899,7 @@
         <div class="dialog-header">
           <div class="dialog-title" style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" style="color: #555;">
+              stroke-linecap="round" stroke-linejoin="round" style="color: #2c65c8;">
               <rect x="3" y="3" width="7" height="7"></rect>
               <rect x="14" y="3" width="7" height="7"></rect>
               <rect x="14" y="14" width="7" height="7"></rect>
@@ -930,8 +931,8 @@
           <div
             style="font-size: 12px; color: #6b7280; margin-bottom: 16px; line-height: 1.4; display: flex; gap: 6px; align-items: flex-start; margin-top: 6px;">
             <span style="font-size: 14px; line-height: 12px; color: #9ca3af;">ⓘ</span>
-            <span>Oracle only supports INSERT, UPDATE for column-level privileges. SELECT must be granted on the whole
-              table.</span>
+            <span>Note: Column-level privileges only support INSERT and UPDATE. For SELECT restrictions, please use Views or Virtual Private Database (VPD) policies instead of direct column grants on base tables.</span>
+
           </div>
 
           <div class="field" style="margin-bottom: 0;">
@@ -945,7 +946,7 @@
           <div class="warning-banner"
             style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 10px 12px; margin-top: 16px; display: flex; gap: 8px; align-items: flex-start;">
             <span style="color: #d97706; font-weight: bold; font-size: 14px; line-height: 14px;">⚠</span>
-            <span style="color: #b45309; font-size: 12px; line-height: 1.4;"><strong>Lưu ý:</strong> Note: WITH GRANT
+            <span style="color: #b45309; font-size: 12px; line-height: 1.4;"><strong>Note:</strong> WITH GRANT
               OPTION is not available for column privileges (Oracle limitation).</span>
           </div>
         </div>
@@ -996,6 +997,12 @@
               style="border: 1px solid #d1d5db; border-radius: 6px; padding: 10px 12px; min-height: 50px; background: #fff; display: flex; flex-direction: column; gap: 4px;">
               <div style="color: #6b7280; font-size: 13px;">Please select Table/Object first.</div>
             </div>
+          </div>
+          <div class="warning-banner" style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 10px 12px; margin-top: 16px; display: flex; gap: 8px; align-items: flex-start;">
+            <span style="color: #d97706; font-weight: bold; font-size: 14px; line-height: 14px;">⚠</span>
+            <span style="color: #b45309; font-size: 12px; line-height: 1.4;"><strong>Note:</strong> WITH GRANT OPTION is not available when granting object privileges to a role (Oracle limitation).</span>
+          </div>
+          <div style="display:none;">
           </div>
         </div>
         <div class="dialog-footer">

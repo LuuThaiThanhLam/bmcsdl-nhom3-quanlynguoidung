@@ -340,6 +340,19 @@ public class AdminController {
                 () -> userManagermentService.setUserQuota(session, username, tablespace, quota), "/admin/users/" + username);
     }
 
+    @PostMapping("/users/{username}/revoke-quota")
+    public String revokeUserQuota(@PathVariable String username,
+            @RequestParam String tablespace,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        if (!isLoggedIn(session)) {
+            return "redirect:/";
+        }
+
+        return runAction(redirectAttributes, "Quota revoked successfully",
+                () -> userManagermentService.revokeUserQuota(session, username, tablespace), "/admin/users/" + username);
+    }
+
     @PostMapping("/users/{username}/grant-sys-priv")
     public String grantSysPriv(@PathVariable String username,
             @RequestParam String privilege,

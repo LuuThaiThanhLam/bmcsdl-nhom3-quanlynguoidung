@@ -21,4 +21,5 @@ public class AuditLogDTO {
     private String sqlText;
     /** "UNIFIED" or "FGA" */
     private String auditType;
+    private String sqlBinds;
 }
