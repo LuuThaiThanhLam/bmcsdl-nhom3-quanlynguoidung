@@ -149,7 +149,9 @@
             <span class="badge" th:if="${p.department}" th:text="${p.department}">SALES</span>
             <span class="ols-label" th:if="${p.olsLabel}" th:text="'🏷️ ' + ${p.olsLabel}">🏷️ PUB::SALES</span>
           </div>
-          <a class="btn btn-edit" th:href="@{'/user/profile/' + ${p.userId} + '/edit'}">Chỉnh sửa</a>
+          <a class="btn btn-edit"
+             th:if="${p.username != null and #strings.equalsIgnoreCase(p.username, session.username)}"
+             th:href="@{'/user/profile/' + ${p.userId} + '/edit'}">Chỉnh sửa</a>
         </div>
         <div class="profile-grid">
           <div class="label">Họ và tên</div>

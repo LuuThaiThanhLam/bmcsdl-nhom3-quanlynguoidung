@@ -1,0 +1,766 @@
+/*
+================================================================================
+03_OLS_BaoMat_UserProfile_Complete.sql
+================================================================================
+MUC DICH
+- Script OLS hoan chinh cho do an quan ly nguoi dung.
+- Gop logic tu:
+  + 03_OLS_BaoMat_UserProfile_file goc.sql
+  + 03_OLS_BaoMat_UserProfile.sql
+  + PATCH_03_OLS.sql
+- Trien khai OLS TU DAU DEN CUOI cho APP_TABLE.USER_PROFILE.
+
+MO HINH NHAN SU DUNG
+- Policy      : USER_PROFILE_OLS
+- Label column: OLS_LABEL
+- Level       : PUB, PRI
+- Compartment : MGR, EMP
+- Group       : ALL, HR, SALES, IT
+- Mau nhan    : PUB:MGR:HR / PUB:EMP:SALES / PRI:EMP:IT ...
+
+Y NGHIA
+- Level:
+  + PUB = du lieu public
+  + PRI = du lieu private
+- Compartment:
+  + MGR = quan ly
+  + EMP = nhan vien
+- Group:
+  + phong ban HR / SALES / IT
+
+LUONG CHAY
+1. SYS       : kiem tra OLS, grant package/quyen nen
+2. LBACSYS   : tao policy
+3. SYS       : grant role policy *_DBA
+4. APP_OLS_MGR: tao level/compartment/group/label, apply policy NO_CONTROL
+5. APP_DBA_ADMIN: gan user privs va user labels
+6. APP_TABLE : gan nhan cho du lieu, tao label function, tao procedure nang/ha
+7. APP_OLS_MGR: apply lai policy voi READ/WRITE/CHECK_CONTROL + label_function
+8. SYS       : tao view cho web xem nhan OLS cua session hien tai
+9. APP_TABLE : tat/bat VPD de demo OLS doc lap (neu can)
+10. Demo truy cap
+
+PHU THUOC
+- Da chay 01_RBAC_Admin_Functions.sql
+- Nen da chay 02_VPD_BaoMat_UserProfile.sql
+- Bang APP_TABLE.USER_PROFILE da ton tai, co cot USER_ID, FULL_NAME, DEPARTMENT,
+  ROLE_LEVEL (hoac co the NVL duoc), va co du lieu mau.
+- Oracle Label Security da cai va enable trong PDB.
+
+LUU Y
+- Sua cac DEFINE *_CONN truoc khi chay.
+- Nen chay bang F5.
+- Sau khi SET_USER_LABELS/SET_USER_PRIVS, user demo nen reconnect.
+- Script duoc viet theo huong "co the chay lai", nhieu buoc boc exception de tranh
+  loi khi doi tuong da ton tai.
+================================================================================
+*/
+
+SET SERVEROUTPUT ON;
+SET DEFINE ON;
+
+DEFINE SYS_CONN                 = "SYS/your_sys_password@//localhost:1521/FREEPDB1 AS SYSDBA"
+DEFINE LBACSYS_CONN             = "LBACSYS/your_lbacsys_password@//localhost:1521/FREEPDB1"
+DEFINE APP_OLS_MGR_CONN         = "APP_OLS_MGR/123456@//localhost:1521/FREEPDB1"
+DEFINE APP_TABLE_CONN           = "APP_TABLE/123456@//localhost:1521/FREEPDB1"
+DEFINE APP_DBA_ADMIN_CONN       = "APP_DBA_ADMIN/123456@//localhost:1521/FREEPDB1"
+DEFINE APP_USER_1_CONN          = "APP_USER_1/123456@//localhost:1521/FREEPDB1"
+DEFINE APP_USER_3_CONN          = "APP_USER_3/123456@//localhost:1521/FREEPDB1"
+DEFINE APP_MANAGER_PROFILE_CONN = "APP_MANAGER_PROFILE/123456@//localhost:1521/FREEPDB1"
+DEFINE APP_MANAGER_SALES_CONN   = "APP_MANAGER_SALES/123456@//localhost:1521/FREEPDB1"
+
+PROMPT ========================================================================
+PROMPT PHASE 1 - CONNECT SYS: KIEM TRA OLS + GRANT CAC QUYEN NEN
+PROMPT ========================================================================
+CONNECT &SYS_CONN
+
+PROMPT ===== KIEM TRA COMPONENT OLS =====
+SELECT COMP_ID, VERSION, STATUS
+FROM DBA_REGISTRY
+WHERE COMP_ID = 'OLS';
+
+PROMPT ===== KIEM TRA TRANG THAI OLS =====
+SELECT NAME, STATUS
+FROM DBA_OLS_STATUS;
+
+GRANT LBAC_DBA TO APP_ROLE_OLS_MGR;
+GRANT LBAC_DBA TO APP_OLS_MGR;
+
+GRANT EXECUTE ON LBACSYS.SA_COMPONENTS   TO APP_ROLE_OLS_MGR;
+GRANT EXECUTE ON LBACSYS.SA_LABEL_ADMIN  TO APP_ROLE_OLS_MGR;
+
+GRANT EXECUTE ON LBACSYS.LBAC_POLICY_ADMIN TO APP_ROLE_OLS_MGR;
+GRANT EXECUTE ON LBACSYS.LBAC_POLICY_ADMIN TO APP_OLS_MGR;
+
+GRANT EXECUTE ON LBACSYS.SA_COMPONENTS   TO APP_OLS_MGR;
+GRANT EXECUTE ON LBACSYS.SA_LABEL_ADMIN  TO APP_OLS_MGR;
+
+GRANT EXECUTE ON LBACSYS.SA_USER_ADMIN TO APP_ROLE_DB_ADMIN;
+GRANT EXECUTE ON LBACSYS.SA_USER_ADMIN TO APP_DBA_ADMIN;
+
+PROMPT ========================================================================
+PROMPT PHASE 2 - CONNECT LBACSYS: TAO POLICY VA GRANT CAC HAM OLS CAN THIET
+PROMPT ========================================================================
+CONNECT &LBACSYS_CONN
+
+BEGIN
+  EXECUTE IMMEDIATE 'GRANT EXECUTE ON LBACSYS.CHAR_TO_LABEL TO APP_TABLE';
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Bo qua grant CHAR_TO_LABEL: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE 'GRANT EXECUTE ON LBACSYS.LABEL_TO_CHAR TO APP_TABLE';
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Bo qua grant LABEL_TO_CHAR: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE 'GRANT EXECUTE ON LBACSYS.TO_LBAC_DATA_LABEL TO APP_TABLE WITH GRANT OPTION';
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Bo qua grant TO_LBAC_DATA_LABEL: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE 'GRANT EXECUTE ON LBACSYS.SA_UTL TO APP_TABLE';
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Bo qua grant SA_UTL: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE 'GRANT EXECUTE ON LBACSYS.SA_SESSION TO APP_TABLE';
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Bo qua grant SA_SESSION: ' || SQLERRM);
+END;
+/
+
+DECLARE
+  v_count NUMBER;
+BEGIN
+  SELECT COUNT(*)
+  INTO v_count
+  FROM DBA_SA_POLICIES
+  WHERE POLICY_NAME = 'USER_PROFILE_OLS';
+
+  IF v_count = 0 THEN
+    SA_SYSDBA.CREATE_POLICY(
+      policy_name     => 'USER_PROFILE_OLS',
+      column_name     => 'OLS_LABEL',
+      default_options => 'NO_CONTROL'
+    );
+    DBMS_OUTPUT.PUT_LINE('Da tao policy USER_PROFILE_OLS');
+  ELSE
+    DBMS_OUTPUT.PUT_LINE('Policy USER_PROFILE_OLS da ton tai, bo qua CREATE_POLICY');
+  END IF;
+
+  SA_SYSDBA.ENABLE_POLICY('USER_PROFILE_OLS');
+  DBMS_OUTPUT.PUT_LINE('Da enable policy USER_PROFILE_OLS');
+END;
+/
+
+PROMPT ========================================================================
+PROMPT PHASE 3 - CONNECT SYS: GRANT ROLE QUAN TRI POLICY
+PROMPT ========================================================================
+CONNECT &SYS_CONN
+
+BEGIN
+  EXECUTE IMMEDIATE 'GRANT USER_PROFILE_OLS_DBA TO APP_OLS_MGR';
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Bo qua grant USER_PROFILE_OLS_DBA cho APP_OLS_MGR: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE 'GRANT USER_PROFILE_OLS_DBA TO APP_DBA_ADMIN';
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Bo qua grant USER_PROFILE_OLS_DBA cho APP_DBA_ADMIN: ' || SQLERRM);
+END;
+/
+
+PROMPT ========================================================================
+PROMPT PHASE 4 - CONNECT APP_OLS_MGR: TAO COMPONENTS + LABELS + APPLY NO_CONTROL
+PROMPT ========================================================================
+CONNECT &APP_OLS_MGR_CONN
+
+BEGIN
+  SA_COMPONENTS.CREATE_LEVEL('USER_PROFILE_OLS', 1000, 'PUB', 'PUBLIC');
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Level PUB co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_COMPONENTS.CREATE_LEVEL('USER_PROFILE_OLS', 2000, 'PRI', 'PRIVATE');
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Level PRI co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_COMPONENTS.CREATE_COMPARTMENT('USER_PROFILE_OLS', 100, 'MGR', 'MANAGER_LEVEL');
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Compartment MGR co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_COMPONENTS.CREATE_COMPARTMENT('USER_PROFILE_OLS', 200, 'EMP', 'EMPLOYEE_LEVEL');
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Compartment EMP co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_COMPONENTS.CREATE_GROUP('USER_PROFILE_OLS', 10, 'ALL', 'ALL_DEPARTMENTS');
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Group ALL co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_COMPONENTS.CREATE_GROUP('USER_PROFILE_OLS', 110, 'HR', 'HR_DEPARTMENT', 'ALL');
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Group HR co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_COMPONENTS.CREATE_GROUP('USER_PROFILE_OLS', 120, 'SALES', 'SALES_DEPARTMENT', 'ALL');
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Group SALES co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_COMPONENTS.CREATE_GROUP('USER_PROFILE_OLS', 130, 'IT', 'IT_DEPARTMENT', 'ALL');
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Group IT co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_LABEL_ADMIN.CREATE_LABEL('USER_PROFILE_OLS', 51110, 'PUB:MGR:HR',    TRUE);
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Label PUB:MGR:HR co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_LABEL_ADMIN.CREATE_LABEL('USER_PROFILE_OLS', 51210, 'PUB:EMP:HR',    TRUE);
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Label PUB:EMP:HR co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_LABEL_ADMIN.CREATE_LABEL('USER_PROFILE_OLS', 51120, 'PUB:MGR:SALES', TRUE);
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Label PUB:MGR:SALES co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_LABEL_ADMIN.CREATE_LABEL('USER_PROFILE_OLS', 51220, 'PUB:EMP:SALES', TRUE);
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Label PUB:EMP:SALES co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_LABEL_ADMIN.CREATE_LABEL('USER_PROFILE_OLS', 51130, 'PUB:MGR:IT',    TRUE);
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Label PUB:MGR:IT co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_LABEL_ADMIN.CREATE_LABEL('USER_PROFILE_OLS', 51230, 'PUB:EMP:IT',    TRUE);
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Label PUB:EMP:IT co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_LABEL_ADMIN.CREATE_LABEL('USER_PROFILE_OLS', 61110, 'PRI:MGR:HR',    TRUE);
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Label PRI:MGR:HR co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_LABEL_ADMIN.CREATE_LABEL('USER_PROFILE_OLS', 61210, 'PRI:EMP:HR',    TRUE);
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Label PRI:EMP:HR co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_LABEL_ADMIN.CREATE_LABEL('USER_PROFILE_OLS', 61120, 'PRI:MGR:SALES', TRUE);
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Label PRI:MGR:SALES co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_LABEL_ADMIN.CREATE_LABEL('USER_PROFILE_OLS', 61220, 'PRI:EMP:SALES', TRUE);
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Label PRI:EMP:SALES co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_LABEL_ADMIN.CREATE_LABEL('USER_PROFILE_OLS', 61130, 'PRI:MGR:IT',    TRUE);
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Label PRI:MGR:IT co the da ton tai: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_LABEL_ADMIN.CREATE_LABEL('USER_PROFILE_OLS', 61230, 'PRI:EMP:IT',    TRUE);
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Label PRI:EMP:IT co the da ton tai: ' || SQLERRM);
+END;
+/
+
+PROMPT ===== KIEM TRA LEVEL =====
+SELECT POLICY_NAME, LEVEL_NUM, SHORT_NAME, LONG_NAME
+FROM DBA_SA_LEVELS
+WHERE POLICY_NAME = 'USER_PROFILE_OLS'
+ORDER BY LEVEL_NUM;
+
+PROMPT ===== KIEM TRA COMPARTMENT =====
+SELECT POLICY_NAME, COMP_NUM, SHORT_NAME, LONG_NAME
+FROM DBA_SA_COMPARTMENTS
+WHERE POLICY_NAME = 'USER_PROFILE_OLS'
+ORDER BY COMP_NUM;
+
+PROMPT ===== KIEM TRA GROUP =====
+SELECT POLICY_NAME, GROUP_NUM, SHORT_NAME, LONG_NAME
+FROM DBA_SA_GROUPS
+WHERE POLICY_NAME = 'USER_PROFILE_OLS'
+ORDER BY GROUP_NUM;
+
+PROMPT ===== KIEM TRA LABEL =====
+SELECT POLICY_NAME, LABEL_TAG, LABEL
+FROM DBA_SA_LABELS
+WHERE POLICY_NAME = 'USER_PROFILE_OLS'
+ORDER BY LABEL_TAG;
+
+BEGIN
+  SA_POLICY_ADMIN.REMOVE_TABLE_POLICY(
+    policy_name => 'USER_PROFILE_OLS',
+    schema_name => 'APP_TABLE',
+    table_name  => 'USER_PROFILE'
+  );
+  DBMS_OUTPUT.PUT_LINE('Da remove table policy cu de apply lai');
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Bo qua REMOVE_TABLE_POLICY: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_POLICY_ADMIN.APPLY_TABLE_POLICY(
+    policy_name   => 'USER_PROFILE_OLS',
+    schema_name   => 'APP_TABLE',
+    table_name    => 'USER_PROFILE',
+    table_options => 'NO_CONTROL'
+  );
+  DBMS_OUTPUT.PUT_LINE('Da apply USER_PROFILE_OLS voi NO_CONTROL');
+END;
+/
+
+PROMPT ========================================================================
+PROMPT PHASE 5 - CONNECT APP_DBA_ADMIN: GAN USER PRIVS VA USER LABELS
+PROMPT ========================================================================
+CONNECT &APP_DBA_ADMIN_CONN
+
+BEGIN
+  SA_USER_ADMIN.SET_USER_PRIVS('USER_PROFILE_OLS', 'APP_DBA_ADMIN', 'READ');
+  SA_USER_ADMIN.SET_USER_PRIVS('USER_PROFILE_OLS', 'APP_TABLE',     'FULL');
+  SA_USER_ADMIN.SET_USER_PRIVS('USER_PROFILE_OLS', 'APP_OLS_MGR',   'FULL');
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('SET_USER_PRIVS: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_USER_ADMIN.SET_USER_LABELS(
+    policy_name     => 'USER_PROFILE_OLS',
+    user_name       => 'APP_MANAGER_PROFILE',
+    max_read_label  => 'PRI:MGR,EMP:HR',
+    max_write_label => 'PRI:MGR,EMP:HR',
+    min_write_label => 'PUB',
+    def_label       => 'PRI:MGR,EMP:HR',
+    row_label       => 'PRI:MGR:HR'
+  );
+
+  SA_USER_ADMIN.SET_USER_LABELS(
+    policy_name     => 'USER_PROFILE_OLS',
+    user_name       => 'APP_MANAGER_SALES',
+    max_read_label  => 'PRI:MGR,EMP:SALES',
+    max_write_label => 'PRI:MGR,EMP:SALES',
+    min_write_label => 'PUB',
+    def_label       => 'PRI:MGR,EMP:SALES',
+    row_label       => 'PRI:MGR:SALES'
+  );
+
+  SA_USER_ADMIN.SET_USER_LABELS(
+    policy_name     => 'USER_PROFILE_OLS',
+    user_name       => 'APP_USER_1',
+    max_read_label  => 'PUB:EMP:HR,SALES,IT',
+    max_write_label => 'PUB:EMP:HR,SALES,IT',
+    min_write_label => 'PUB',
+    def_label       => 'PUB:EMP:HR,SALES,IT',
+    row_label       => 'PUB:EMP:HR,SALES,IT'
+  );
+
+  SA_USER_ADMIN.SET_USER_LABELS(
+    policy_name     => 'USER_PROFILE_OLS',
+    user_name       => 'APP_USER_3',
+    max_read_label  => 'PUB:EMP:HR,SALES,IT',
+    max_write_label => 'PUB:EMP:HR,SALES,IT',
+    min_write_label => 'PUB',
+    def_label       => 'PUB:EMP:HR,SALES,IT',
+    row_label       => 'PUB:EMP:HR,SALES,IT'
+  );
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('SET_USER_LABELS: ' || SQLERRM);
+END;
+/
+
+PROMPT ===== KIEM TRA USER LABEL/PRIVILEGE =====
+SELECT USER_NAME,
+       POLICY_NAME,
+       USER_PRIVILEGES,
+       MAX_READ_LABEL,
+       MAX_WRITE_LABEL,
+       MIN_WRITE_LABEL,
+       DEFAULT_READ_LABEL,
+       DEFAULT_ROW_LABEL
+FROM DBA_SA_USERS
+WHERE POLICY_NAME = 'USER_PROFILE_OLS'
+ORDER BY USER_NAME;
+
+PROMPT ========================================================================
+PROMPT PHASE 6 - CONNECT APP_TABLE: GAN NHAN DU LIEU + TAO HAM/PROCEDURE
+PROMPT ========================================================================
+CONNECT &APP_TABLE_CONN
+
+UPDATE USER_PROFILE
+SET OLS_LABEL = CHAR_TO_LABEL(
+  'USER_PROFILE_OLS',
+  'PUB:' || CASE WHEN NVL(ROLE_LEVEL, 1) >= 2 THEN 'MGR' ELSE 'EMP' END
+         || ':' || UPPER(DEPARTMENT)
+);
+COMMIT;
+
+PROMPT ===== LABEL DU LIEU SAU KHI GAN LAN DAU =====
+SELECT USER_ID, FULL_NAME, DEPARTMENT, ROLE_LEVEL,
+       LABEL_TO_CHAR(OLS_LABEL) AS OLS_LABEL_TEXT
+FROM USER_PROFILE
+ORDER BY USER_ID;
+
+CREATE OR REPLACE FUNCTION GEN_PROFILE_LABEL(
+  p_role_level    IN NUMBER,
+  p_department    IN VARCHAR2,
+  p_cur_label_tag IN NUMBER
+) RETURN LBACSYS.LBAC_LABEL
+AS
+  v_level   VARCHAR2(10) := 'PUB';
+  v_comp    VARCHAR2(10);
+  v_grp     VARCHAR2(20);
+  v_cur_txt VARCHAR2(80);
+BEGIN
+  IF p_cur_label_tag IS NOT NULL THEN
+    BEGIN
+      v_cur_txt := LABEL_TO_CHAR(p_cur_label_tag);
+      IF v_cur_txt LIKE 'PRI%' THEN
+        v_level := 'PRI';
+      END IF;
+    EXCEPTION
+      WHEN OTHERS THEN
+        v_level := 'PUB';
+    END;
+  END IF;
+
+  v_comp := CASE WHEN NVL(p_role_level, 1) >= 2 THEN 'MGR' ELSE 'EMP' END;
+  v_grp  := UPPER(p_department);
+
+  RETURN TO_LBAC_DATA_LABEL(
+    'USER_PROFILE_OLS',
+    v_level || ':' || v_comp || ':' || v_grp
+  );
+END;
+/
+
+SHOW ERRORS FUNCTION GEN_PROFILE_LABEL;
+
+GRANT EXECUTE ON GEN_PROFILE_LABEL TO LBACSYS;
+GRANT EXECUTE ON GEN_PROFILE_LABEL TO LBAC_TRIGGER;
+
+CREATE OR REPLACE PROCEDURE UPGRADE_PROFILE_LABEL(p_user_id IN NUMBER)
+AUTHID DEFINER
+AS
+  v_dept         USER_PROFILE.DEPARTMENT%TYPE;
+  v_level        NUMBER;
+  v_comp         VARCHAR2(10);
+  v_session_user VARCHAR2(128) := SYS_CONTEXT('USERENV', 'SESSION_USER');
+  v_my_dept      VARCHAR2(50);
+BEGIN
+  SELECT DEPARTMENT, NVL(ROLE_LEVEL, 1)
+  INTO v_dept, v_level
+  FROM USER_PROFILE
+  WHERE USER_ID = p_user_id
+  FOR UPDATE;
+
+  IF v_session_user IN ('APP_MANAGER_PROFILE', 'APP_MANAGER_SALES') THEN
+    SELECT DEPARTMENT
+    INTO v_my_dept
+    FROM APP_TABLE.USER_DEPT_MAP
+    WHERE USERNAME = v_session_user;
+
+    IF v_dept <> v_my_dept THEN
+      RAISE_APPLICATION_ERROR(-20101, 'Chi duoc nang label trong phong ban cua ban: ' || v_my_dept);
+    END IF;
+  ELSIF v_session_user NOT IN ('APP_DBA_ADMIN', 'APP_TABLE') THEN
+    RAISE_APPLICATION_ERROR(-20102, 'User hien tai khong duoc nang label');
+  END IF;
+
+  v_comp := CASE WHEN v_level >= 2 THEN 'MGR' ELSE 'EMP' END;
+
+  IF v_session_user IN ('APP_MANAGER_PROFILE', 'APP_MANAGER_SALES') THEN
+    SA_UTL.SET_LABEL(
+      'USER_PROFILE_OLS',
+      CHAR_TO_LABEL('USER_PROFILE_OLS', 'PRI:MGR,EMP:' || UPPER(v_dept))
+    );
+  END IF;
+
+  UPDATE USER_PROFILE
+  SET OLS_LABEL = CHAR_TO_LABEL(
+    'USER_PROFILE_OLS',
+    'PRI:' || v_comp || ':' || UPPER(v_dept)
+  )
+  WHERE USER_ID = p_user_id;
+
+  COMMIT;
+END;
+/
+
+SHOW ERRORS PROCEDURE UPGRADE_PROFILE_LABEL;
+
+CREATE OR REPLACE PROCEDURE DOWNGRADE_PROFILE_LABEL(p_user_id IN NUMBER)
+AUTHID DEFINER
+AS
+  v_dept         USER_PROFILE.DEPARTMENT%TYPE;
+  v_level        NUMBER;
+  v_comp         VARCHAR2(10);
+  v_session_user VARCHAR2(128) := SYS_CONTEXT('USERENV', 'SESSION_USER');
+  v_my_dept      VARCHAR2(50);
+BEGIN
+  SELECT DEPARTMENT, NVL(ROLE_LEVEL, 1)
+  INTO v_dept, v_level
+  FROM USER_PROFILE
+  WHERE USER_ID = p_user_id
+  FOR UPDATE;
+
+  IF v_session_user IN ('APP_MANAGER_PROFILE', 'APP_MANAGER_SALES') THEN
+    SELECT DEPARTMENT
+    INTO v_my_dept
+    FROM APP_TABLE.USER_DEPT_MAP
+    WHERE USERNAME = v_session_user;
+
+    IF v_dept <> v_my_dept THEN
+      RAISE_APPLICATION_ERROR(-20103, 'Chi duoc ha label trong phong ban cua ban: ' || v_my_dept);
+    END IF;
+  ELSIF v_session_user NOT IN ('APP_DBA_ADMIN', 'APP_TABLE') THEN
+    RAISE_APPLICATION_ERROR(-20104, 'User hien tai khong duoc ha label');
+  END IF;
+
+  v_comp := CASE WHEN v_level >= 2 THEN 'MGR' ELSE 'EMP' END;
+
+  IF v_session_user IN ('APP_MANAGER_PROFILE', 'APP_MANAGER_SALES') THEN
+    SA_UTL.SET_LABEL(
+      'USER_PROFILE_OLS',
+      CHAR_TO_LABEL('USER_PROFILE_OLS', 'PRI:MGR,EMP:' || UPPER(v_dept))
+    );
+  END IF;
+
+  UPDATE USER_PROFILE
+  SET OLS_LABEL = CHAR_TO_LABEL(
+    'USER_PROFILE_OLS',
+    'PUB:' || v_comp || ':' || UPPER(v_dept)
+  )
+  WHERE USER_ID = p_user_id;
+
+  COMMIT;
+END;
+/
+
+SHOW ERRORS PROCEDURE DOWNGRADE_PROFILE_LABEL;
+
+GRANT EXECUTE ON UPGRADE_PROFILE_LABEL   TO APP_ROLE_PROFILE_MGR;
+GRANT EXECUTE ON DOWNGRADE_PROFILE_LABEL TO APP_ROLE_PROFILE_MGR;
+GRANT EXECUTE ON UPGRADE_PROFILE_LABEL   TO APP_ROLE_DB_ADMIN;
+GRANT EXECUTE ON DOWNGRADE_PROFILE_LABEL TO APP_ROLE_DB_ADMIN;
+
+PROMPT ========================================================================
+PROMPT PHASE 7 - CONNECT APP_OLS_MGR: APPLY POLICY CHINH THUC VOI LABEL_FUNCTION
+PROMPT ========================================================================
+CONNECT &APP_OLS_MGR_CONN
+
+BEGIN
+  SA_POLICY_ADMIN.REMOVE_TABLE_POLICY(
+    policy_name => 'USER_PROFILE_OLS',
+    schema_name => 'APP_TABLE',
+    table_name  => 'USER_PROFILE'
+  );
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Bo qua REMOVE_TABLE_POLICY lan 2: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  SA_POLICY_ADMIN.APPLY_TABLE_POLICY(
+    policy_name    => 'USER_PROFILE_OLS',
+    schema_name    => 'APP_TABLE',
+    table_name     => 'USER_PROFILE',
+    table_options  => 'READ_CONTROL,WRITE_CONTROL,CHECK_CONTROL',
+    label_function => 'APP_TABLE.GEN_PROFILE_LABEL(:new.ROLE_LEVEL, :new.DEPARTMENT, :new.OLS_LABEL)',
+    predicate      => NULL
+  );
+  DBMS_OUTPUT.PUT_LINE('Da apply policy voi READ/WRITE/CHECK_CONTROL + label_function');
+END;
+/
+
+PROMPT ===== KIEM TRA TABLE POLICY =====
+SELECT POLICY_NAME, SCHEMA_NAME, TABLE_NAME, STATUS, TABLE_OPTIONS, LABEL_FUNCTION
+FROM DBA_SA_TABLE_POLICIES
+WHERE POLICY_NAME = 'USER_PROFILE_OLS'
+ORDER BY SCHEMA_NAME, TABLE_NAME;
+
+PROMPT ========================================================================
+PROMPT PHASE 8 - CONNECT SYS: TAO VIEW CHO WEB XEM NHAN OLS CUA CHINH MINH
+PROMPT ========================================================================
+CONNECT &SYS_CONN
+
+CREATE OR REPLACE VIEW LBACSYS.V_MY_OLS_LABEL AS
+SELECT USER_NAME,
+       POLICY_NAME,
+       USER_PRIVILEGES,
+       MAX_READ_LABEL,
+       MAX_WRITE_LABEL,
+       MIN_WRITE_LABEL,
+       DEFAULT_READ_LABEL,
+       DEFAULT_ROW_LABEL
+FROM DBA_SA_USERS
+WHERE USER_NAME = SYS_CONTEXT('USERENV', 'SESSION_USER');
+
+GRANT SELECT ON LBACSYS.V_MY_OLS_LABEL TO APP_ROLE_PROFILE_MGR;
+GRANT SELECT ON LBACSYS.V_MY_OLS_LABEL TO APP_ROLE_USER;
+
+PROMPT ========================================================================
+PROMPT PHASE 9 - CONNECT APP_TABLE: TAM TAT VPD DE DEMO OLS DOC LAP
+PROMPT ========================================================================
+CONNECT &APP_TABLE_CONN
+
+BEGIN
+  DBMS_RLS.ENABLE_POLICY('APP_TABLE', 'USER_PROFILE', 'VPD_USER_PROFILE_SELECT', FALSE);
+  DBMS_OUTPUT.PUT_LINE('Da tam tat VPD_USER_PROFILE_SELECT');
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Bo qua tat VPD SELECT: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  DBMS_RLS.ENABLE_POLICY('APP_TABLE', 'USER_PROFILE', 'VPD_USER_PROFILE_DML', FALSE);
+  DBMS_OUTPUT.PUT_LINE('Da tam tat VPD_USER_PROFILE_DML');
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Bo qua tat VPD DML: ' || SQLERRM);
+END;
+/
+
+PROMPT ========================================================================
+PROMPT PHASE 10 - DEMO APP_USER_1
+PROMPT ========================================================================
+CONNECT &APP_USER_1_CONN
+
+SELECT USER_ID, FULL_NAME, DEPARTMENT, ROLE_LEVEL,
+       LABEL_TO_CHAR(OLS_LABEL) AS OLS_LABEL_TEXT
+FROM APP_TABLE.USER_PROFILE
+ORDER BY USER_ID;
+
+PROMPT ========================================================================
+PROMPT PHASE 11 - DEMO APP_MANAGER_PROFILE NANG LABEL HR LEN PRIVATE
+PROMPT ========================================================================
+CONNECT &APP_MANAGER_PROFILE_CONN
+
+EXEC APP_TABLE.UPGRADE_PROFILE_LABEL(2);
+
+SELECT USER_ID, FULL_NAME, DEPARTMENT, ROLE_LEVEL,
+       LABEL_TO_CHAR(OLS_LABEL) AS OLS_LABEL_TEXT
+FROM APP_TABLE.USER_PROFILE
+WHERE USER_ID = 2;
+
+PROMPT ========================================================================
+PROMPT PHASE 12 - APP_USER_1 THU LAI SAU KHI DONG HR LEN PRIVATE
+PROMPT ========================================================================
+CONNECT &APP_USER_1_CONN
+
+SELECT USER_ID, FULL_NAME, DEPARTMENT, ROLE_LEVEL,
+       LABEL_TO_CHAR(OLS_LABEL) AS OLS_LABEL_TEXT
+FROM APP_TABLE.USER_PROFILE
+ORDER BY USER_ID;
+
+SELECT USER_ID, FULL_NAME, DEPARTMENT, ROLE_LEVEL,
+       LABEL_TO_CHAR(OLS_LABEL) AS OLS_LABEL_TEXT
+FROM APP_TABLE.USER_PROFILE
+WHERE USER_ID = 2;
+
+PROMPT ========================================================================
+PROMPT PHASE 13 - APP_DBA_ADMIN CO READ NEN XEM TAT CA
+PROMPT ========================================================================
+CONNECT &APP_DBA_ADMIN_CONN
+
+SELECT USER_ID, FULL_NAME, DEPARTMENT, ROLE_LEVEL,
+       LABEL_TO_CHAR(OLS_LABEL) AS OLS_LABEL_TEXT
+FROM APP_TABLE.USER_PROFILE
+ORDER BY USER_ID;
+
+PROMPT ========================================================================
+PROMPT PHASE 14 - HA LABEL VE PUBLIC VA BAT LAI VPD
+PROMPT ========================================================================
+CONNECT &APP_MANAGER_PROFILE_CONN
+
+EXEC APP_TABLE.DOWNGRADE_PROFILE_LABEL(2);
+
+CONNECT &APP_TABLE_CONN
+
+BEGIN
+  DBMS_RLS.ENABLE_POLICY('APP_TABLE', 'USER_PROFILE', 'VPD_USER_PROFILE_SELECT', TRUE);
+  DBMS_OUTPUT.PUT_LINE('Da bat lai VPD_USER_PROFILE_SELECT');
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Bo qua bat lai VPD SELECT: ' || SQLERRM);
+END;
+/
+
+BEGIN
+  DBMS_RLS.ENABLE_POLICY('APP_TABLE', 'USER_PROFILE', 'VPD_USER_PROFILE_DML', TRUE);
+  DBMS_OUTPUT.PUT_LINE('Da bat lai VPD_USER_PROFILE_DML');
+EXCEPTION
+  WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('Bo qua bat lai VPD DML: ' || SQLERRM);
+END;
+/
+
+PROMPT ===== KIEM TRA CUOI LABEL DU LIEU =====
+SELECT USER_ID, FULL_NAME, DEPARTMENT, ROLE_LEVEL,
+       LABEL_TO_CHAR(OLS_LABEL) AS OLS_LABEL_TEXT
+FROM USER_PROFILE
+ORDER BY USER_ID;
+
+PROMPT ========================================================================
+PROMPT KET THUC 03_OLS_BaoMat_UserProfile_Complete.sql
+PROMPT ========================================================================

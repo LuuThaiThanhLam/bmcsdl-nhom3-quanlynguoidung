@@ -41,11 +41,21 @@ public class UserController {
     }
 
     @GetMapping("/profile/{userId}/edit")
-    public String editForm(@PathVariable long userId, HttpSession session, Model model) {
+    public String editForm(@PathVariable long userId,
+                           HttpSession session,
+                           Model model,
+                           RedirectAttributes redirectAttributes) {
         if (!isLoggedIn(session)) {
             return "redirect:/";
         }
-        model.addAttribute("profile", userProfileService.getMyProfile(session, userId));
+        UserProfileDTO profile = userProfileService.getMyProfile(session, userId);
+        if (!userProfileService.canEditProfile(session, profile)) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Ban chi duoc sua ho so thuoc ve chinh minh (VPD).");
+            redirectAttributes.addFlashAttribute("errorCode", "VPD_NO_EDIT");
+            return "redirect:/user/profile";
+        }
+        model.addAttribute("profile", profile);
         return "user/profile_edit";
     }
 

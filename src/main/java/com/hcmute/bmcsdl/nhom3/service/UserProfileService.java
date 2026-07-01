@@ -54,6 +54,15 @@ public class UserProfileService {
                                 "Khong tim thay ho so hoac ban khong co quyen xem ho so nay", "PROFILE_NOT_VISIBLE")));
     }
 
+    /** VPD DML chi cho sua dong co USERNAME trung voi user dang dang nhap. */
+    public boolean canEditProfile(HttpSession session, UserProfileDTO profile) {
+        if (profile == null || profile.getUsername() == null) {
+            return false;
+        }
+        Credential credential = getCredential(session);
+        return profile.getUsername().equalsIgnoreCase(credential.username());
+    }
+
     public void updateMyProfile(HttpSession session, UserProfileDTO profile) {
         if (profile == null || profile.getUserId() == null) {
             throw new OracleException("Thieu ma ho so can cap nhat", "INVALID_PROFILE_DATA");

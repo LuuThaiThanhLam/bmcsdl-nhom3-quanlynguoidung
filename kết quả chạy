@@ -1,0 +1,44 @@
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Error starting at line : 6 in command -
+GRANT EXECUTE ON LBACSYS.SA_POLICY_ADMIN TO APP_ROLE_OLS_MGR
+Error report -
+ORA-04042: procedure, function, package, or package body does not exist
+
+https://docs.oracle.com/error-help/db/ora-04042/04042. 00000 -  "procedure, function, package, or package body does not exist"
+*Cause:    An attempt was made to access a procedure, function, package, or
+           package body that did not exist.
+*Action:   Ensure that the name is correct.
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Error starting at line : 10 in command -
+GRANT EXECUTE ON LBACSYS.SA_POLICY_ADMIN TO APP_OLS_MGR
+Error report -
+ORA-04042: procedure, function, package, or package body does not exist
+
+https://docs.oracle.com/error-help/db/ora-04042/04042. 00000 -  "procedure, function, package, or package body does not exist"
+*Cause:    An attempt was made to access a procedure, function, package, or
+           package body that did not exist.
+*Action:   Ensure that the name is correct.
+
+Grant succeeded.
+
+
+Grant succeeded.
+
